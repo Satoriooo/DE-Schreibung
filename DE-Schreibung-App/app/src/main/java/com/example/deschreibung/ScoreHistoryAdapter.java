@@ -33,9 +33,7 @@ public class ScoreHistoryAdapter extends RecyclerView.Adapter<ScoreHistoryAdapte
 
     @Override
     public void onBindViewHolder(@NonNull ScoreHistoryViewHolder holder, int position) {
-        // Find the data for the current item
         ScoreHistory currentItem = scoreHistoryList.get(position);
-        // Tell the ViewHolder to update its views with this data
         holder.bind(currentItem);
     }
 
@@ -44,11 +42,6 @@ public class ScoreHistoryAdapter extends RecyclerView.Adapter<ScoreHistoryAdapte
         return scoreHistoryList.size();
     }
 
-
-    /**
-     * The ViewHolder now contains all the logic for a single list item.
-     * It finds the views, formats the data, and handles the click event.
-     */
     static class ScoreHistoryViewHolder extends RecyclerView.ViewHolder {
         private final TextView textViewScore;
         private final TextView textViewTimestamp;
@@ -59,18 +52,28 @@ public class ScoreHistoryAdapter extends RecyclerView.Adapter<ScoreHistoryAdapte
             textViewTimestamp = itemView.findViewById(R.id.textViewItemTimestamp);
         }
 
-        /**
-         * This method takes a ScoreHistory object and updates the views.
-         * It also sets the click listener.
-         */
         public void bind(final ScoreHistory item) {
             textViewScore.setText(String.valueOf(item.getScore()));
             textViewTimestamp.setText(formatTimestamp(item.getTimestamp()));
 
-            // Set the click listener for the entire list item view
             itemView.setOnClickListener(v -> {
-                // Get the context (the activity) from the item's view
                 Context context = itemView.getContext();
-                // Create an Intent to open ScoreDetailActivity
                 Intent intent = new Intent(context, ScoreDetailActivity.class);
-                // Attach the unique ID of the clicked item to the Intent
+                intent.putExtra(ScoreDetailActivity.EXTRA_SCORE_ID, item.getId());
+                context.startActivity(intent);
+            });
+        }
+
+        // This method must be INSIDE the ViewHolder class to be found
+        private String formatTimestamp(String dbTimestamp) {
+            SimpleDateFormat dbFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault());
+            SimpleDateFormat displayFormat = new SimpleDateFormat("dd. MMMM<x_bin_615>, HH:mm 'Uhr'", Locale.GERMAN);
+            try {
+                Date date = dbFormat.parse(dbTimestamp);
+                return displayFormat.format(date);
+            } catch (ParseException | NullPointerException e) {
+                return dbTimestamp;
+            }
+        }
+    }
+}
