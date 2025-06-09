@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources xmlns:tools="http://schemas.android.com/tools">
+    <style name="Theme.DESchreibung" parent="Theme.Material3.Dark.NoActionBar">
+        <item name="colorPrimary">@color/material_dynamic_primary_80</item>
+        <item name="colorPrimaryVariant">@color/material_dynamic_primary_30</item>
+        <item name="colorOnPrimary">@color/material_dynamic_primary_20</item>
+        <item name="colorSecondary">@color/material_dynamic_secondary_80</item>
+        <item name="colorSecondaryVariant">@color/material_dynamic_secondary_30</item>
+        <item name="colorOnSecondary">@color/material_dynamic_secondary_20</item>
+        <item name="android:statusBarColor">?attr/colorPrimaryVariant</item>
+    </style>
+</resources>
