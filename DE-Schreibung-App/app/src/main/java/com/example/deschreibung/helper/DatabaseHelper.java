@@ -4,6 +4,13 @@ import android.content.Context;
 import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteOpenHelper;
 import androidx.annotation.Nullable;
+import android.database.Cursor;
+import com.example.deschreibung.models.ScoreHistory;
+import java.util.ArrayList;
+import java.util.List;
+import android.text.TextUtils;
+import com.example.deschreibung.models.Vocabulary;
+import java.util.Collections;
 
 public class DatabaseHelper extends SQLiteOpenHelper {
 
@@ -68,5 +75,94 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         db.execSQL("DROP TABLE IF EXISTS " + TABLE_SCORE_HISTORY);
         db.execSQL("DROP TABLE IF EXISTS " + TABLE_VOCABULARY);
         onCreate(db);
+    }
+
+    /**
+     * Retrieves all score history entries from the database, ordered by the most recent first.
+     * @return A list of ScoreHistory objects.
+     */
+    public List<ScoreHistory> getAllScoreHistory() {
+        List<ScoreHistory> scoreHistoryList = new ArrayList<>();
+        // Query to select all entries, ordering by timestamp in descending order
+        String selectQuery = "SELECT * FROM " + TABLE_SCORE_HISTORY + " ORDER BY " + KEY_TIMESTAMP + " DESC";
+
+        SQLiteDatabase db = this.getReadableDatabase();
+        Cursor cursor = db.rawQuery(selectQuery, null);
+
+        // Loop through all rows and add them to the list
+        if (cursor.moveToFirst()) {
+            do {
+                ScoreHistory scoreHistory = new ScoreHistory();
+                // Using getColumnIndexOrThrow to be safe against column name errors
+                scoreHistory.setId(cursor.getLong(cursor.getColumnIndexOrThrow(KEY_ID)));
+                scoreHistory.setOriginalText(cursor.getString(cursor.getColumnIndexOrThrow(KEY_ORIGINAL_TEXT)));
+                scoreHistory.setCorrectedText(cursor.getString(cursor.getColumnIndexOrThrow(KEY_CORRECTED_TEXT)));
+                scoreHistory.setFeedbackComment(cursor.getString(cursor.getColumnIndexOrThrow(KEY_FEEDBACK_COMMENT)));
+                scoreHistory.setScore(cursor.getInt(cursor.getColumnIndexOrThrow(KEY_SCORE)));
+                scoreHistory.setGrammaticalExplanation(cursor.getString(cursor.getColumnIndexOrThrow(KEY_GRAMMATICAL_EXPLANATION)));
+                scoreHistory.setTimestamp(cursor.getString(cursor.getColumnIndexOrThrow(KEY_TIMESTAMP)));
+
+                scoreHistoryList.add(scoreHistory);
+            } while (cursor.moveToNext());
+        }
+
+        // Clean up resources
+        cursor.close();
+        db.close();
+
+        return scoreHistoryList;
+    }
+    /**
+     * Retrieves all vocabulary entries from the database, ordered alphabetically by the German word.
+     * @return A list of Vocabulary objects.
+     */
+    public List<Vocabulary> getAllVocabulary() {
+        List<Vocabulary> vocabularyList = new ArrayList<>();
+        String selectQuery = "SELECT * FROM " + TABLE_VOCABULARY + " ORDER BY " + KEY_GERMAN_WORD + " ASC";
+
+        SQLiteDatabase db = this.getReadableDatabase();
+        Cursor cursor = db.rawQuery(selectQuery, null);
+
+        if (cursor.moveToFirst()) {
+            do {
+                Vocabulary vocab = new Vocabulary();
+                vocab.setId(cursor.getLong(cursor.getColumnIndexOrThrow(KEY_ID)));
+                vocab.setGermanWord(cursor.getString(cursor.getColumnIndexOrThrow(KEY_GERMAN_WORD)));
+                vocab.setEnglishTranslation(cursor.getString(cursor.getColumnIndexOrThrow(KEY_ENGLISH_TRANSLATION)));
+                vocab.setExampleSentence(cursor.getString(cursor.getColumnIndexOrThrow(KEY_EXAMPLE_SENTENCE)));
+                vocabularyList.add(vocab);
+            } while (cursor.moveToNext());
+        }
+        cursor.close();
+        db.close();
+        return vocabularyList;
+    }
+
+    /**
+     * Deletes multiple vocabulary items from the database using a list of their IDs.
+     * @param ids A list of the primary key IDs of the words to be deleted.
+     */
+    public void deleteVocabularyItems(List<Long> ids) {
+        if (ids == null || ids.isEmpty()) {
+            return;
+        }
+        SQLiteDatabase db = this.getWritableDatabase();
+        // Create a string of '?' placeholders, e.g., "?,?,?"
+        String placeholders = TextUtils.join(",", Collections.nCopies(ids.size(), "?"));
+        // Convert the list of Longs to an array of Strings for the query arguments
+        String[] selectionArgs = new String[ids.size()];
+        for (int i = 0; i < ids.size(); i++) {
+            selectionArgs[i] = String.valueOf(ids.get(i));
+        }
+
+        db.beginTransaction();
+        try {
+            // Execute the delete query: "DELETE FROM Vocabulary WHERE id IN (?,?,?)"
+            db.delete(TABLE_VOCABULARY, KEY_ID + " IN (" + placeholders + ")", selectionArgs);
+            db.setTransactionSuccessful();
+        } finally {
+            db.endTransaction();
+            db.close();
+        }
     }
 }

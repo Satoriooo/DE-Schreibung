@@ -3,6 +3,9 @@ plugins {
 }
 
 android {
+    buildFeatures {
+        viewBinding = true
+    }
     namespace = "com.example.deschreibung"
     compileSdk = 34
 
@@ -46,6 +49,7 @@ dependencies {
 
     // Optional, but highly recommended for debugging network calls
     implementation("com.squareup.okhttp3:logging-interceptor:4.12.0")
+    implementation(libs.activity)
 
     // Default test implementations
     testImplementation("junit:junit:4.13.2")
