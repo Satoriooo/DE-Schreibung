@@ -6,4 +6,9 @@
         android:title="Verlauf"
         android:icon="@drawable/ic_history"
         app:showAsAction="ifRoom" />
+    <item
+        android:id="@+id/action_view_vocabulary"
+        android:title="Vokabeln"
+        android:icon="@drawable/ic_book"
+        app:showAsAction="ifRoom" />
 </menu>

@@ -76,9 +76,12 @@ public class MainActivity extends AppCompatActivity {
 
     @Override
     public boolean onOptionsItemSelected(@NonNull MenuItem item) {
-        if (item.getItemId() == R.id.action_view_history) {
-            Intent intent = new Intent(this, ScoreHistoryActivity.class);
-            startActivity(intent);
+        int itemId = item.getItemId();
+        if (itemId == R.id.action_view_history) {
+            startActivity(new Intent(this, ScoreHistoryActivity.class));
+            return true;
+        } else if (itemId == R.id.action_view_vocabulary) {
+            startActivity(new Intent(this, VocabularyListActivity.class));
             return true;
         }
         return super.onOptionsItemSelected(item);
