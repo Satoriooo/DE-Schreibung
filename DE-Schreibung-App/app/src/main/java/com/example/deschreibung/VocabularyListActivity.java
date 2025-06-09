@@ -12,6 +12,8 @@ import com.example.deschreibung.databinding.ActivityVocabularyListBinding;
 import com.example.deschreibung.helper.DatabaseHelper;
 import com.example.deschreibung.models.Vocabulary;
 import java.util.List;
+import android.content.Intent;
+
 
 public class VocabularyListActivity extends AppCompatActivity implements VocabularyListAdapter.VocabularyClickListener {
 
@@ -44,16 +46,6 @@ public class VocabularyListActivity extends AppCompatActivity implements Vocabul
 
     // --- Click Listener Methods from Adapter Interface ---
 
-    @Override
-    public void onItemClicked(int position) {
-        if (adapter.isSelectionMode()) {
-            toggleSelection(position);
-        } else {
-            // TODO: In Part 6, open Vocabulary Detail screen
-            String word = vocabularyList.get(position).getGermanWord();
-            Toast.makeText(this, "Detailansicht für '" + word + "' wird in Teil 6 hinzugefügt.", Toast.LENGTH_SHORT).show();
-        }
-    }
 
     @Override
     public void onItemLongClicked(int position) {
@@ -113,5 +105,17 @@ public class VocabularyListActivity extends AppCompatActivity implements Vocabul
 
         // Refresh the list from the database after deletion
         setupRecyclerView();
+    }
+    @Override
+    public void onItemClicked(int position) {
+        if (adapter.isSelectionMode()) {
+            toggleSelection(position);
+        } else {
+            // This is where we open the detail screen
+            Vocabulary clickedItem = vocabularyList.get(position);
+            Intent intent = new Intent(this, VocabularyDetailActivity.class);
+            intent.putExtra(VocabularyDetailActivity.EXTRA_VOCAB_ID, clickedItem.getId());
+            startActivity(intent);
+        }
     }
 }

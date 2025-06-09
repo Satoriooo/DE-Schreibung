@@ -1,5 +1,7 @@
 package com.example.deschreibung;
 
+import android.content.Context;
+import android.content.Intent;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -16,10 +18,6 @@ import java.util.Locale;
 public class ScoreHistoryAdapter extends RecyclerView.Adapter<ScoreHistoryAdapter.ScoreHistoryViewHolder> {
 
     private final List<ScoreHistory> scoreHistoryList;
-    // Formatter to parse the timestamp from the database (e.g., "2025-06-07 18:30:00")
-    private final SimpleDateFormat dbFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault());
-    // Formatter to display the timestamp in a user-friendly way
-    private final SimpleDateFormat displayFormat = new SimpleDateFormat("dd. MMMM yyyy, HH:mm 'Uhr'", Locale.GERMAN);
 
     public ScoreHistoryAdapter(List<ScoreHistory> scoreHistoryList) {
         this.scoreHistoryList = scoreHistoryList;
@@ -35,7 +33,9 @@ public class ScoreHistoryAdapter extends RecyclerView.Adapter<ScoreHistoryAdapte
 
     @Override
     public void onBindViewHolder(@NonNull ScoreHistoryViewHolder holder, int position) {
+        // Find the data for the current item
         ScoreHistory currentItem = scoreHistoryList.get(position);
+        // Tell the ViewHolder to update its views with this data
         holder.bind(currentItem);
     }
 
@@ -44,7 +44,12 @@ public class ScoreHistoryAdapter extends RecyclerView.Adapter<ScoreHistoryAdapte
         return scoreHistoryList.size();
     }
 
-    class ScoreHistoryViewHolder extends RecyclerView.ViewHolder {
+
+    /**
+     * The ViewHolder now contains all the logic for a single list item.
+     * It finds the views, formats the data, and handles the click event.
+     */
+    static class ScoreHistoryViewHolder extends RecyclerView.ViewHolder {
         private final TextView textViewScore;
         private final TextView textViewTimestamp;
 
@@ -52,24 +57,20 @@ public class ScoreHistoryAdapter extends RecyclerView.Adapter<ScoreHistoryAdapte
             super(itemView);
             textViewScore = itemView.findViewById(R.id.textViewItemScore);
             textViewTimestamp = itemView.findViewById(R.id.textViewItemTimestamp);
-
-            // TODO: In Part 6, set an OnClickListener here to open the detail view
-            // itemView.setOnClickListener(v -> { ... });
         }
 
-        public void bind(ScoreHistory item) {
+        /**
+         * This method takes a ScoreHistory object and updates the views.
+         * It also sets the click listener.
+         */
+        public void bind(final ScoreHistory item) {
             textViewScore.setText(String.valueOf(item.getScore()));
             textViewTimestamp.setText(formatTimestamp(item.getTimestamp()));
-        }
 
-        private String formatTimestamp(String dbTimestamp) {
-            try {
-                Date date = dbFormat.parse(dbTimestamp);
-                return displayFormat.format(date);
-            } catch (ParseException | NullPointerException e) {
-                // If parsing fails, return the original string as a fallback
-                return dbTimestamp;
-            }
-        }
-    }
-}
+            // Set the click listener for the entire list item view
+            itemView.setOnClickListener(v -> {
+                // Get the context (the activity) from the item's view
+                Context context = itemView.getContext();
+                // Create an Intent to open ScoreDetailActivity
+                Intent intent = new Intent(context, ScoreDetailActivity.class);
+                // Attach the unique ID of the clicked item to the Intent

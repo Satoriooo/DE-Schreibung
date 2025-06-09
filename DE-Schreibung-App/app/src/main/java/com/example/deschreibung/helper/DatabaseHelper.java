@@ -165,4 +165,55 @@ public class DatabaseHelper extends SQLiteOpenHelper {
             db.close();
         }
     }
+    // ... (inside the DatabaseHelper class)
+
+    /**
+     * Retrieves a single ScoreHistory entry by its primary key ID.
+     * @param id The ID of the score history entry to retrieve.
+     * @return A ScoreHistory object, or null if not found.
+     */
+    public ScoreHistory getScoreHistoryById(long id) {
+        SQLiteDatabase db = this.getReadableDatabase();
+        ScoreHistory scoreHistory = null;
+        // Use a parameterized query to prevent SQL injection
+        try (Cursor cursor = db.query(TABLE_SCORE_HISTORY, null, KEY_ID + "=?",
+                new String[]{String.valueOf(id)}, null, null, null, null)) {
+            if (cursor != null && cursor.moveToFirst()) {
+                scoreHistory = new ScoreHistory();
+                scoreHistory.setId(cursor.getLong(cursor.getColumnIndexOrThrow(KEY_ID)));
+                scoreHistory.setOriginalText(cursor.getString(cursor.getColumnIndexOrThrow(KEY_ORIGINAL_TEXT)));
+                scoreHistory.setCorrectedText(cursor.getString(cursor.getColumnIndexOrThrow(KEY_CORRECTED_TEXT)));
+                scoreHistory.setFeedbackComment(cursor.getString(cursor.getColumnIndexOrThrow(KEY_FEEDBACK_COMMENT)));
+                scoreHistory.setScore(cursor.getInt(cursor.getColumnIndexOrThrow(KEY_SCORE)));
+                scoreHistory.setGrammaticalExplanation(cursor.getString(cursor.getColumnIndexOrThrow(KEY_GRAMMATICAL_EXPLANATION)));
+                scoreHistory.setTimestamp(cursor.getString(cursor.getColumnIndexOrThrow(KEY_TIMESTAMP)));
+            }
+        } finally {
+            db.close();
+        }
+        return scoreHistory;
+    }
+
+    /**
+     * Retrieves a single Vocabulary entry by its primary key ID.
+     * @param id The ID of the vocabulary entry to retrieve.
+     * @return A Vocabulary object, or null if not found.
+     */
+    public Vocabulary getVocabularyById(long id) {
+        SQLiteDatabase db = this.getReadableDatabase();
+        Vocabulary vocab = null;
+        try (Cursor cursor = db.query(TABLE_VOCABULARY, null, KEY_ID + "=?",
+                new String[]{String.valueOf(id)}, null, null, null, null)) {
+            if (cursor != null && cursor.moveToFirst()) {
+                vocab = new Vocabulary();
+                vocab.setId(cursor.getLong(cursor.getColumnIndexOrThrow(KEY_ID)));
+                vocab.setGermanWord(cursor.getString(cursor.getColumnIndexOrThrow(KEY_GERMAN_WORD)));
+                vocab.setEnglishTranslation(cursor.getString(cursor.getColumnIndexOrThrow(KEY_ENGLISH_TRANSLATION)));
+                vocab.setExampleSentence(cursor.getString(cursor.getColumnIndexOrThrow(KEY_EXAMPLE_SENTENCE)));
+            }
+        } finally {
+            db.close();
+        }
+        return vocab;
+    }
 }
