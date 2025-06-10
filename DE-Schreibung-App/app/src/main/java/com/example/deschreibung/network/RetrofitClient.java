@@ -1,5 +1,7 @@
 package com.example.deschreibung.network;
 
+import java.util.concurrent.TimeUnit; // <-- ADD THIS IMPORT
+
 import okhttp3.OkHttpClient;
 import okhttp3.logging.HttpLoggingInterceptor;
 import retrofit2.Retrofit;
@@ -7,29 +9,28 @@ import retrofit2.converter.gson.GsonConverterFactory;
 
 public class RetrofitClient {
 
-    // IMPORTANT: This URL must point to your backend.
-    // Use http://10.0.2.2:5000/ for the Android Emulator to connect to your local PC.
-    // When you deploy, change this to your live URL (e.g., "https://your-app.onrender.com/").
-    private static final String BASE_URL = "https://de-schreibung.onrender.com";
+    // Make sure this is your live Render URL
+    private static final String BASE_URL = "https://de-schreibung-api.onrender.com/"; // Example URL, use yours
 
     private static Retrofit retrofitInstance = null;
     private static ApiService apiService = null;
 
     private static Retrofit getRetrofitInstance() {
         if (retrofitInstance == null) {
-            // Create a logger to see request and response details in Logcat
             HttpLoggingInterceptor loggingInterceptor = new HttpLoggingInterceptor();
             loggingInterceptor.setLevel(HttpLoggingInterceptor.Level.BODY);
 
-            // Create a custom OkHttpClient to add the logger
+            // --- NEW: Create an OkHttpClient with custom timeouts ---
             OkHttpClient okHttpClient = new OkHttpClient.Builder()
                     .addInterceptor(loggingInterceptor)
+                    .connectTimeout(60, TimeUnit.SECONDS) // Set connection timeout
+                    .readTimeout(60, TimeUnit.SECONDS)    // Set read timeout
+                    .writeTimeout(60, TimeUnit.SECONDS)   // Set write timeout
                     .build();
 
-            // Build the Retrofit instance
             retrofitInstance = new Retrofit.Builder()
                     .baseUrl(BASE_URL)
-                    .client(okHttpClient)
+                    .client(okHttpClient) // <-- Use the new client with longer timeouts
                     .addConverterFactory(GsonConverterFactory.create())
                     .build();
         }
