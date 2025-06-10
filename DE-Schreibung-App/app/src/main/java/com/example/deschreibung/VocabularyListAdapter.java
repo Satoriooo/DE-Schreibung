@@ -4,6 +4,7 @@ import android.util.SparseBooleanArray;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.ImageButton; // <-- ADD THIS IMPORT
 import android.widget.TextView;
 import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
@@ -18,10 +19,11 @@ public class VocabularyListAdapter extends RecyclerView.Adapter<VocabularyListAd
     private final SparseBooleanArray selectedItems = new SparseBooleanArray();
     private boolean isSelectionMode = false;
 
-    // Interface for handling click events in the Activity
+    // THE LISTENER INTERFACE IS UPDATED WITH A NEW METHOD
     public interface VocabularyClickListener {
         void onItemClicked(int position);
         void onItemLongClicked(int position);
+        void onDeleteItemClicked(int position); // <-- NEW METHOD
     }
 
     public VocabularyListAdapter(List<Vocabulary> vocabularyList, VocabularyClickListener clickListener) {
@@ -40,7 +42,6 @@ public class VocabularyListAdapter extends RecyclerView.Adapter<VocabularyListAd
     public void onBindViewHolder(@NonNull VocabularyViewHolder holder, int position) {
         Vocabulary currentItem = vocabularyList.get(position);
         holder.bind(currentItem);
-        // Set the activation state based on whether the item is in our selectedItems map
         holder.itemView.setActivated(selectedItems.get(position, false));
     }
 
@@ -50,12 +51,10 @@ public class VocabularyListAdapter extends RecyclerView.Adapter<VocabularyListAd
     }
 
 
-    // --- Selection State Helper Methods ---
-
+    // --- Selection State Helper Methods (No changes here) ---
     public void setSelectionMode(boolean selectionMode) { isSelectionMode = selectionMode; }
     public boolean isSelectionMode() { return isSelectionMode; }
     public int getSelectedItemCount() { return selectedItems.size(); }
-
     public void toggleSelection(int position) {
         if (selectedItems.get(position, false)) {
             selectedItems.delete(position);
@@ -64,13 +63,11 @@ public class VocabularyListAdapter extends RecyclerView.Adapter<VocabularyListAd
         }
         notifyItemChanged(position);
     }
-
     public void clearSelections() {
         isSelectionMode = false;
         selectedItems.clear();
-        notifyDataSetChanged(); // Redraw the whole list to clear all selections
+        notifyDataSetChanged();
     }
-
     public List<Long> getSelectedItemsIds() {
         List<Long> ids = new ArrayList<>(selectedItems.size());
         for (int i = 0; i < selectedItems.size(); i++) {
@@ -81,22 +78,30 @@ public class VocabularyListAdapter extends RecyclerView.Adapter<VocabularyListAd
     }
 
 
-    // --- ViewHolder ---
-
+    // --- ViewHolder (Updated) ---
     class VocabularyViewHolder extends RecyclerView.ViewHolder {
         private final TextView textViewGermanWord;
+        private final ImageButton buttonDelete; // <-- NEW: Reference to the delete button
 
         VocabularyViewHolder(View itemView) {
             super(itemView);
             textViewGermanWord = itemView.findViewById(R.id.textViewGermanWord);
+            buttonDelete = itemView.findViewById(R.id.buttonDelete); // <-- NEW: Find the button by its ID
 
+            // Click listener for the entire row
             itemView.setOnClickListener(v -> {
                 if (clickListener != null) clickListener.onItemClicked(getAdapterPosition());
             });
 
+            // Long click listener for the entire row
             itemView.setOnLongClickListener(v -> {
                 if (clickListener != null) clickListener.onItemLongClicked(getAdapterPosition());
-                return true; // Consume the long click
+                return true;
+            });
+
+            // NEW: Click listener specifically for the delete button
+            buttonDelete.setOnClickListener(v -> {
+                if (clickListener != null) clickListener.onDeleteItemClicked(getAdapterPosition());
             });
         }
 
