@@ -5,7 +5,7 @@ import google.generativeai as genai
 from flask import Flask, request, jsonify
 from dotenv import load_dotenv
 
-print("--- SERVER STARTING WITH FULL DEBUG LOGGING ---")
+print("--- SERVER STARTING WITH FINAL PROMPTS ---")
 
 # --- Setup ---
 load_dotenv()
@@ -20,10 +20,57 @@ try:
 except Exception as e:
     print(f"CRITICAL STARTUP ERROR: {e}")
 
-# --- Prompt Templates (Unchanged) ---
-EVALUATION_PROMPT_TEMPLATE = """...""" # Abbreviated for clarity
-EXAMPLES_PROMPT_TEMPLATE = """...""" # Abbreviated for clarity
+# --- THIS IS THE FULL, UNABBREVIATED EVALUATION PROMPT ---
+EVALUATION_PROMPT_TEMPLATE = """
+You are a strict but fair German language teacher named 'Herr Schmidt'. Your student is studying for the B2 CEFR level. Your task is to evaluate the student's written text, providing feedback with the goal of helping them pass the B2 exam. Do not be overly friendly or encouraging; be direct, precise, and professional.
 
+The user has provided the following text:
+\"\"\"
+{user_text}
+\"\"\"
+
+You MUST provide your response as a single, valid JSON object. Do not include any text or markdown formatting before or after the JSON object. The JSON object must have the following structure and content:
+
+{{
+  "originalText": "The user's original, unmodified text.",
+  "correctedText": "The fully corrected version of the user's text. Ensure it is grammatically perfect and stylistically appropriate for a B2 level.",
+  "feedbackComment": "A direct, professional comment on the overall quality of the text. Mention its strengths and weaknesses in relation to the B2 level. Keep it concise.",
+  "score": <An integer score from 0 to 100. Be a strict grader. A good B2 text would be 85-95. A perfect text is 100. A text with several basic errors should be below 70.>,
+  "grammaticalExplanation": "A detailed but clear explanation of the 2-3 most important grammatical or stylistic mistakes in the text. Explain WHY it was wrong and what the correct form is.",
+  "vocabularyList": [
+    {{
+      "germanWord": "<The first key B2-level noun, verb, adjective, or adverb the user used incorrectly or could have used.>",
+      "englishTranslation": "<The English translation of the German word.>",
+      "exampleSentence": "<A simple, correct German sentence using this word.>"
+    }}
+  ]
+}}
+
+IMPORTANT RULES for the `vocabularyList`:
+- Only extract nouns, verbs, adjectives, or adverbs that are at a B2 level or higher.
+- EXCLUDE simple, common words (e.g., personal pronouns like 'ich', 'du'; articles like 'der', 'die', 'das'; common prepositions like 'in', 'auf'; and A1/A2 verbs like 'sein', 'haben', 'gehen').
+- If the user made no relevant vocabulary mistakes, return an empty array: [].
+- Provide a maximum of 3 words for the list.
+"""
+
+# --- THIS IS THE FULL, UNABBREVIATED EXAMPLES PROMPT ---
+EXAMPLES_PROMPT_TEMPLATE = """
+You are a German language teacher. A student wants more example sentences for a specific German word to understand its usage better.
+The student has requested examples for the word: "{german_word}"
+
+Provide three diverse and useful example sentences for this word. The sentences should be appropriate for a B2 CEFR level.
+The sentences must be returned as a single, valid JSON object. Do not include any text or markdown formatting before or after the JSON object.
+The JSON object must have a single key, "examples", which contains a list of the three strings.
+
+Example format:
+{{
+  "examples": [
+    "Das ist der erste Beispielsatz.",
+    "Hier ist ein zweiter, anderer Satz.",
+    "Und ein dritter Satz, der eine andere Nuance zeigt."
+  ]
+}}
+"""
 
 @app.route('/evaluate', methods=['POST'])
 def evaluate_text_endpoint():
@@ -36,15 +83,10 @@ def evaluate_text_endpoint():
         model = genai.GenerativeModel('gemini-1.5-flash')
         response = model.generate_content(full_prompt)
 
-        # --- NEW: Print the entire response object for debugging ---
-        print("--- Full Gemini Response Object (Evaluate) ---")
-        print(response)
-        print("---------------------------------------------")
-
         if not response.parts:
-            # This handles cases where the response is blocked by safety filters
-            print("Gemini response was blocked. Feedback:", response.prompt_feedback)
-            return jsonify({"error": "The response was blocked by safety filters."}), 500
+            print("--- Gemini Response Blocked ---")
+            print(response.prompt_feedback)
+            return jsonify({"error": "The response was blocked by Google's safety filters."}), 500
 
         cleaned_response_text = response.text.strip().replace('```json', '').replace('```', '').strip()
         response_json = json.loads(cleaned_response_text)
@@ -68,13 +110,9 @@ def more_examples_endpoint():
         model = genai.GenerativeModel('gemini-1.5-flash')
         response = model.generate_content(prompt)
         
-        # --- NEW: Print the entire response object for debugging ---
-        print("--- Full Gemini Response Object (More Examples) ---")
-        print(response)
-        print("--------------------------------------------------")
-        
         if not response.parts:
-            print("Gemini response was blocked. Feedback:", response.prompt_feedback)
+            print("--- Gemini Response Blocked ---")
+            print(response.prompt_feedback)
             return jsonify({"error": "The response was blocked by safety filters."}), 500
 
         cleaned_response_text = response.text.strip().replace('```json', '').replace('```', '').strip()
