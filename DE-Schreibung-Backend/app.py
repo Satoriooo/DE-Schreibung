@@ -5,7 +5,10 @@ import google.generativeai as genai
 from flask import Flask, request, jsonify
 from dotenv import load_dotenv
 
-# --- Setup (No changes here) ---
+# --- THIS IS THE NEW VERSION MARKER ---
+print("--- SERVER STARTING WITH PROMPT FIX V3 (double-brace version) ---")
+
+# --- Setup ---
 load_dotenv()
 app = Flask(__name__)
 
@@ -18,8 +21,7 @@ try:
 except Exception as e:
     print(f"CRITICAL STARTUP ERROR: {e}")
 
-# --- Prompt Template (THIS IS THE CORRECTED PART) ---
-# All the curly braces for the JSON example are now doubled (e.g., {{ and }}).
+# --- Prompt Template with escaped braces ---
 GEMINI_PROMPT_TEMPLATE = """
 You are a strict but fair German language teacher named 'Herr Schmidt'. Your student is studying for the B2 CEFR level. Your task is to evaluate the student's written text, providing feedback with the goal of helping them pass the B2 exam. Do not be overly friendly or encouraging; be direct, precise, and professional.
 
@@ -64,7 +66,6 @@ def evaluate_text_endpoint():
         
         print(f"Received text for evaluation: {user_text[:80]}...")
         
-        # This line will now work correctly
         full_prompt = GEMINI_PROMPT_TEMPLATE.format(user_text=user_text)
         model = genai.GenerativeModel('gemini-1.5-flash')
         
