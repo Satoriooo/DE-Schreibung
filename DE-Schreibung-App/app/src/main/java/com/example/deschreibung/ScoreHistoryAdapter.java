@@ -64,15 +64,19 @@ public class ScoreHistoryAdapter extends RecyclerView.Adapter<ScoreHistoryAdapte
             });
         }
 
-        // This method must be INSIDE the ViewHolder class to be found
         private String formatTimestamp(String dbTimestamp) {
+            // This format matches how the timestamp is stored in the SQLite database
             SimpleDateFormat dbFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault());
-            SimpleDateFormat displayFormat = new SimpleDateFormat("dd. MMMM<x_bin_615>, HH:mm 'Uhr'", Locale.GERMAN);
+
+            // THE FIX: This is a correct and robust pattern for displaying the date in German.
+            // The previous version had an illegal character typo.
+            SimpleDateFormat displayFormat = new SimpleDateFormat("dd. MMMM yyyy, HH:mm 'Uhr'", Locale.GERMAN);
+
             try {
                 Date date = dbFormat.parse(dbTimestamp);
                 return displayFormat.format(date);
             } catch (ParseException | NullPointerException e) {
-                return dbTimestamp;
+                return dbTimestamp; // Fallback to the raw timestamp if parsing fails
             }
         }
     }
