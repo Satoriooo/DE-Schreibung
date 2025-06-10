@@ -18,48 +18,76 @@
             app:title="Vokabeldetails" />
     </com.google.android.material.appbar.AppBarLayout>
 
-    <LinearLayout
+    <ScrollView
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:orientation="vertical"
-        android:padding="24dp">
+        android:layout_height="match_parent">
 
-        <TextView
-            android:id="@+id/textViewDetailGermanWord"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:textAppearance="@style/TextAppearance.Material3.DisplaySmall"
-            tools:text="die Gelegenheit" />
-
-        <TextView
-            android:id="@+id/textViewDetailEnglishTranslation"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="4dp"
-            android:textAppearance="@style/TextAppearance.Material3.TitleMedium"
-            android:textColor="?android:attr/textColorSecondary"
-            tools:text="the opportunity" />
-
-        <com.google.android.material.divider.MaterialDivider
+        <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="24dp"
-            android:layout_marginBottom="24dp" />
+            android:orientation="vertical"
+            android:padding="16dp">
 
-        <TextView
-            style="@style/TextAppearance.Material3.TitleMedium"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="Beispielsatz:" />
+            <TextView
+                android:id="@+id/textViewDetailGermanWord"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:textAppearance="@style/TextAppearance.Material3.DisplaySmall"
+                tools:text="die Gelegenheit" />
 
-        <TextView
-            android:id="@+id/textViewDetailExampleSentence"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="8dp"
-            android:lineSpacingMultiplier="1.2"
-            android:textAppearance="@style/TextAppearance.Material3.BodyLarge"
-            android:textStyle="italic"
-            tools:text="Ich hatte die Gelegenheit, mit ihm zu sprechen." />
-    </LinearLayout>
+            <TextView
+                android:id="@+id/textViewDetailEnglishTranslation"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="4dp"
+                android:textAppearance="@style/TextAppearance.Material3.TitleMedium"
+                android:textColor="?android:attr/textColorSecondary"
+                tools:text="the opportunity" />
+
+            <TextView
+                style="@style/TextAppearance.Material3.TitleMedium"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="24dp"
+                android:text="Beispielsatz:" />
+
+            <TextView
+                android:id="@+id/textViewDetailExampleSentence"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:lineSpacingMultiplier="1.2"
+                android:textAppearance="@style/TextAppearance.Material3.BodyLarge"
+                android:textStyle="italic"
+                tools:text="Ich hatte die Gelegenheit, mit ihm zu sprechen." />
+
+            <FrameLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="24dp">
+                <Button
+                    android:id="@+id/buttonMoreExamples"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_gravity="center_horizontal"
+                    android:text="Mehr Beispiele" />
+                <ProgressBar
+                    android:id="@+id/progressMoreExamples"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_gravity="center"
+                    android:visibility="gone"/>
+            </FrameLayout>
+
+            <LinearLayout
+                android:id="@+id/containerMoreExamples"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:visibility="gone"
+                android:layout_marginTop="8dp"
+                tools:visibility="visible" />
+
+        </LinearLayout>
+    </ScrollView>
 </LinearLayout>
