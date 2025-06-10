@@ -59,7 +59,7 @@ def evaluate_text_endpoint():
     
     print(f"Received text for evaluation: {user_text[:80]}...")
     
-    cleaned_response_text = "" # Initialize to handle potential errors
+    cleaned_response_text = "" # Initialize to handle potential errors.
     try:
         full_prompt = GEMINI_PROMPT_TEMPLATE.format(user_text=user_text)
         model = genai.GenerativeModel('gemini-1.5-flash')
