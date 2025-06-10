@@ -1,9 +1,11 @@
 import os
 import json
+import traceback  # <-- Import the traceback module
 import google.generativeai as genai
 from flask import Flask, request, jsonify
 from dotenv import load_dotenv
 
+# --- Setup (No changes here) ---
 load_dotenv()
 app = Flask(__name__)
 
@@ -14,8 +16,9 @@ try:
     genai.configure(api_key=api_key)
     print("Gemini API configured successfully.")
 except Exception as e:
-    print(e)
+    print(f"CRITICAL STARTUP ERROR: {e}")
 
+# --- Prompt Template (No changes here) ---
 GEMINI_PROMPT_TEMPLATE = """
 You are a strict but fair German language teacher named 'Herr Schmidt'. Your student is studying for the B2 CEFR level. Your task is to evaluate the student's written text, providing feedback with the goal of helping them pass the B2 exam. Do not be overly friendly or encouraging; be direct, precise, and professional.
 
@@ -50,41 +53,41 @@ IMPORTANT RULES for the `vocabularyList`:
 
 @app.route('/evaluate', methods=['POST'])
 def evaluate_text_endpoint():
-    if not request.is_json:
-        return jsonify({"error": "Invalid request: Content-Type must be application/json"}), 400
-    request_data = request.get_json()
-    user_text = request_data.get('text')
-    if not user_text or not isinstance(user_text, str) or not user_text.strip():
-        return jsonify({"error": "Invalid request: 'text' field is missing or empty"}), 400
-    
-    print(f"Received text for evaluation: {user_text[:80]}...")
-    
-    cleaned_response_text = "" # Initialize to handle potential errors.
+    # --- This entire 'try...except' block is new and more robust ---
     try:
+        if not request.is_json:
+            return jsonify({"error": "Invalid request: Content-Type must be application/json"}), 400
+        request_data = request.get_json()
+        user_text = request_data.get('text')
+        if not user_text or not isinstance(user_text, str) or not user_text.strip():
+            return jsonify({"error": "Invalid request: 'text' field is missing or empty"}), 400
+        
+        print(f"Received text for evaluation: {user_text[:80]}...")
+        
         full_prompt = GEMINI_PROMPT_TEMPLATE.format(user_text=user_text)
         model = genai.GenerativeModel('gemini-1.5-flash')
+        
+        # This is the call we are debugging
         response = model.generate_content(full_prompt)
 
-        # --- THIS IS THE CRUCIAL NEW LINE FOR DEBUGGING ---
-        print(f"--- Raw Gemini Response ---\n{response.text}\n---------------------------")
+        # Check if the response was blocked by safety filters
+        if not response.parts:
+            print("--- Gemini Response Blocked ---")
+            print(response.prompt_feedback)
+            return jsonify({"error": "The response was blocked by Google's safety filters."}), 500
 
+        # Proceed with parsing if not blocked
         cleaned_response_text = response.text.strip().replace('```json', '').replace('```', '').strip()
         response_json = json.loads(cleaned_response_text)
         response_json['originalText'] = user_text
         return jsonify(response_json), 200
 
-    # --- THIS ERROR HANDLING IS NOW MORE DETAILED ---
-    except json.JSONDecodeError as e:
-        error_message = f"JSON Decode Error: {e}. Failed to parse Gemini response."
-        print(error_message)
-        print("--- Text that failed to parse ---")
-        print(cleaned_response_text)
-        print("---------------------------------")
-        return jsonify({"error": "Failed to parse feedback from AI service."}), 500
     except Exception as e:
-        error_message = f"An unexpected error occurred: {str(e)}"
-        print(error_message)
-        return jsonify({"error": "An internal server error occurred while contacting the AI service."}), 500
+        # This is the most important part: it will print the full, detailed error.
+        print("--- An exception occurred during the request ---")
+        print(traceback.format_exc())
+        print("----------------------------------------------------")
+        return jsonify({"error": "An internal server error occurred. See server logs for details."}), 500
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000, debug=True)
