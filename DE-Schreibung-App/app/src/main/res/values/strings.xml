@@ -1,3 +1,7 @@
 <resources>
     <string name="app_name">DE-Schreibung</string>
+
+    <string name="writing_topic_hint">Wählen Sie ein Thema oder schreiben Sie Ihr eigenes</string>
+    <string name="writing_input_hint">Schreiben Sie hier Ihren Text...</string>
+
 </resources>

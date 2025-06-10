@@ -32,15 +32,19 @@
         <activity
             android:name=".ScoreHistoryActivity"
             android:exported="false" />
+
         <activity
             android:name=".VocabularyListActivity"
             android:exported="false" />
+
         <activity
             android:name=".ScoreDetailActivity"
             android:exported="false" />
+
         <activity
             android:name=".VocabularyDetailActivity"
             android:exported="false" />
 
     </application>
+
 </manifest>

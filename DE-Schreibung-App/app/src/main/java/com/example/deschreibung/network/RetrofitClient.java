@@ -10,7 +10,7 @@ import retrofit2.converter.gson.GsonConverterFactory;
 public class RetrofitClient {
 
     // Make sure this is your live Render URL
-    private static final String BASE_URL = "https://de-schreibung-api.onrender.com/"; // Example URL, use yours
+    private static final String BASE_URL = "https://de-schreibung.onrender.com"; // Example URL, use yours
 
     private static Retrofit retrofitInstance = null;
     private static ApiService apiService = null;
