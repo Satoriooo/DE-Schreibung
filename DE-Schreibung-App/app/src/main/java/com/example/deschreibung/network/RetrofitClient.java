@@ -10,7 +10,7 @@ public class RetrofitClient {
     // IMPORTANT: This URL must point to your backend.
     // Use http://10.0.2.2:5000/ for the Android Emulator to connect to your local PC.
     // When you deploy, change this to your live URL (e.g., "https://your-app.onrender.com/").
-    private static final String BASE_URL = "http://10.0.2.2:5000/";
+    private static final String BASE_URL = "https://de-schreibung.onrender.com";
 
     private static Retrofit retrofitInstance = null;
     private static ApiService apiService = null;

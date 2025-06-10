@@ -28,6 +28,7 @@ public class WritingActivity extends AppCompatActivity {
     private DatabaseHelper dbHelper;
     private final Random random = new Random();
 
+    // The list of topics... (no changes here)
     private final List<String> topics = Arrays.asList(
             "Was hast du am Wochenende gemacht?", "Beschreibe deine Heimatstadt.",
             "Was sind deine Pläne für die Zukunft?", "Erzähle von deinem letzten Urlaub.",
@@ -64,10 +65,9 @@ public class WritingActivity extends AppCompatActivity {
     private void setNewRandomTopic() {
         String randomTopic = topics.get(random.nextInt(topics.size()));
         binding.editTextTopic.setText(randomTopic);
-
         binding.editTextUserText.setText("");
-        binding.editTextUserText.setVisibility(View.VISIBLE); // Show input
-        binding.scrollViewFeedback.setVisibility(View.GONE); // Hide feedback
+        // Only hide the feedback view. The EditText is ALWAYS visible.
+        binding.scrollViewFeedback.setVisibility(View.GONE);
     }
 
     private void handleGetFeedbackClick() {
@@ -114,7 +114,8 @@ public class WritingActivity extends AppCompatActivity {
     private void saveAndDisplayFeedback(ApiResponse apiResponse) {
         long historyId = saveScoreHistory(apiResponse);
         if (historyId != -1) {
-            Toast.makeText(this, "Feedback gespeichert!", Toast.LENGTH_SHORT).show();
+            // Optional: You can uncomment this toast if you want a confirmation message.
+            // Toast.makeText(this, "Feedback gespeichert!", Toast.LENGTH_SHORT).show();
             if (apiResponse.getVocabularyList() != null && !apiResponse.getVocabularyList().isEmpty()) {
                 for (Vocabulary vocab : apiResponse.getVocabularyList()) {
                     saveVocabulary(vocab);
@@ -124,14 +125,15 @@ public class WritingActivity extends AppCompatActivity {
             Toast.makeText(this, "Fehler beim Speichern des Feedbacks.", Toast.LENGTH_SHORT).show();
         }
 
-        binding.editTextUserText.setVisibility(View.GONE); // Hide input
-        binding.scrollViewFeedback.setVisibility(View.VISIBLE); // Show feedback
+        // Only show the feedback view. The EditText is ALWAYS visible.
+        binding.scrollViewFeedback.setVisibility(View.VISIBLE);
         binding.textViewScore.setText(String.format(java.util.Locale.GERMAN, "Bewertung: %d/100", apiResponse.getScore()));
         binding.textViewFeedbackComment.setText(apiResponse.getFeedbackComment());
         binding.textViewCorrectedText.setText(apiResponse.getCorrectedText());
         binding.textViewGrammaticalExplanation.setText(apiResponse.getGrammaticalExplanation());
     }
 
+    // saveScoreHistory and saveVocabulary methods remain unchanged.
     private long saveScoreHistory(ApiResponse data) {
         SQLiteDatabase db = dbHelper.getWritableDatabase();
         ContentValues values = new ContentValues();
