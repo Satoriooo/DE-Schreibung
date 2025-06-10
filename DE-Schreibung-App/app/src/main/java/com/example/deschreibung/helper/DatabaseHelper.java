@@ -11,6 +11,8 @@ import java.util.List;
 import android.text.TextUtils;
 import com.example.deschreibung.models.Vocabulary;
 import java.util.Collections;
+import android.content.ContentValues;
+
 
 public class DatabaseHelper extends SQLiteOpenHelper {
 
@@ -215,5 +217,21 @@ public class DatabaseHelper extends SQLiteOpenHelper {
             db.close();
         }
         return vocab;
+    }
+    /**
+     * Adds a new vocabulary word. Uses CONFLICT_IGNORE to prevent crashes on duplicate entries.
+     * If a germanWord already exists, the new one is not inserted.
+     */
+    public void addVocabulary(Vocabulary vocab) {
+        SQLiteDatabase db = this.getWritableDatabase();
+        ContentValues values = new ContentValues();
+        values.put(KEY_GERMAN_WORD, vocab.getGermanWord());
+        values.put(KEY_ENGLISH_TRANSLATION, vocab.getEnglishTranslation());
+        values.put(KEY_EXAMPLE_SENTENCE, vocab.getExampleSentence());
+
+        // Using `CONFLICT_IGNORE` ensures that if a word already exists (due to the UNIQUE constraint),
+        // the new insert is simply ignored instead of throwing an error.
+        db.insertWithOnConflict(TABLE_VOCABULARY, null, values, SQLiteDatabase.CONFLICT_IGNORE);
+        db.close();
     }
 }

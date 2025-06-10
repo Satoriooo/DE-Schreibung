@@ -1,6 +1,6 @@
 package com.example.deschreibung;
 
-import android.content.Intent;
+import android.content.Intent; // <-- ADD THIS IMPORT
 import android.os.Bundle;
 import android.view.Menu;
 import android.view.MenuItem;
@@ -12,8 +12,7 @@ import androidx.recyclerview.widget.LinearLayoutManager;
 import com.example.deschreibung.databinding.ActivityVocabularyListBinding;
 import com.example.deschreibung.helper.DatabaseHelper;
 import com.example.deschreibung.models.Vocabulary;
-
-import java.util.Collections; // <-- ADD THIS IMPORT
+import java.util.Collections;
 import java.util.List;
 
 public class VocabularyListActivity extends AppCompatActivity implements VocabularyListAdapter.VocabularyClickListener {
@@ -32,6 +31,20 @@ public class VocabularyListActivity extends AppCompatActivity implements Vocabul
         dbHelper = new DatabaseHelper(this);
         setupToolbar();
         setupRecyclerView();
+
+        // NEW: Set up the click listener for the Floating Action Button
+        binding.fabAddVocabulary.setOnClickListener(v -> {
+            Intent intent = new Intent(VocabularyListActivity.this, EditVocabularyActivity.class);
+            startActivity(intent);
+        });
+    }
+
+    // NEW: The onResume() method is called every time the activity comes to the foreground
+    @Override
+    protected void onResume() {
+        super.onResume();
+        // We reload the data here to see any new words that were added.
+        loadVocabularyData();
     }
 
     private void setupToolbar() {
@@ -39,19 +52,25 @@ public class VocabularyListActivity extends AppCompatActivity implements Vocabul
     }
 
     private void setupRecyclerView() {
+        // We only set up the recycler view once
+        binding.recyclerViewVocabulary.setLayoutManager(new LinearLayoutManager(this));
+    }
+
+    // NEW: Logic for loading/reloading data is now in its own method
+    private void loadVocabularyData() {
         vocabularyList = dbHelper.getAllVocabulary();
         adapter = new VocabularyListAdapter(vocabularyList, this);
-        binding.recyclerViewVocabulary.setLayoutManager(new LinearLayoutManager(this));
         binding.recyclerViewVocabulary.setAdapter(adapter);
     }
 
-    // --- Click Listener Methods from Adapter Interface ---
 
+    // --- Click Listener Methods from Adapter Interface ---
     @Override
     public void onItemClicked(int position) {
         if (adapter.isSelectionMode()) {
             toggleSelection(position);
         } else {
+            // This part can be extended later to EDIT an existing item
             Vocabulary clickedItem = vocabularyList.get(position);
             Intent intent = new Intent(this, VocabularyDetailActivity.class);
             intent.putExtra(VocabularyDetailActivity.EXTRA_VOCAB_ID, clickedItem.getId());
@@ -68,26 +87,18 @@ public class VocabularyListActivity extends AppCompatActivity implements Vocabul
         toggleSelection(position);
     }
 
-    // NEW: Implement the delete item click handler
     @Override
     public void onDeleteItemClicked(int position) {
-        // Get the item to be deleted
         Vocabulary itemToDelete = vocabularyList.get(position);
         long idToDelete = itemToDelete.getId();
-
-        // Use the existing DB method by wrapping the single ID in a list
         dbHelper.deleteVocabularyItems(Collections.singletonList(idToDelete));
-
-        // Remove the item from the list that the adapter is using
         vocabularyList.remove(position);
-
-        // Notify the adapter that an item has been removed for a smooth animation
         adapter.notifyItemRemoved(position);
-
         Toast.makeText(this, "'" + itemToDelete.getGermanWord() + "' gelöscht.", Toast.LENGTH_SHORT).show();
     }
 
 
+    // --- Multi-select and Action Bar logic (no changes here) ---
     private void toggleSelection(int position) {
         adapter.toggleSelection(position);
         int count = adapter.getSelectedItemCount();
@@ -99,7 +110,6 @@ public class VocabularyListActivity extends AppCompatActivity implements Vocabul
         }
     }
 
-    // --- Contextual Action Bar Logic (No changes here) ---
     private final ActionMode.Callback actionModeCallback = new ActionMode.Callback() {
         @Override
         public boolean onCreateActionMode(ActionMode mode, Menu menu) {
@@ -133,6 +143,6 @@ public class VocabularyListActivity extends AppCompatActivity implements Vocabul
         List<Long> selectedIds = adapter.getSelectedItemsIds();
         dbHelper.deleteVocabularyItems(selectedIds);
         Toast.makeText(this, selectedIds.size() + " Vokabel(n) gelöscht.", Toast.LENGTH_SHORT).show();
-        setupRecyclerView(); // Refresh the list
+        loadVocabularyData(); // Refresh the list
     }
 }
