@@ -1,5 +1,10 @@
 package com.example.deschreibung;
 
+import android.graphics.Color;
+import android.text.Spannable;
+import android.text.SpannableStringBuilder;
+import android.text.style.ForegroundColorSpan;
+
 import android.content.ContentValues;
 import android.database.sqlite.SQLiteDatabase;
 import android.os.Bundle;
@@ -15,9 +20,15 @@ import com.example.deschreibung.models.Vocabulary;
 import com.example.deschreibung.network.ApiRequest;
 import com.example.deschreibung.network.ApiResponse;
 import com.example.deschreibung.network.RetrofitClient;
+
 import java.util.Arrays;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Random;
+import java.util.Set;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
 import retrofit2.Call;
 import retrofit2.Callback;
 import retrofit2.Response;
@@ -126,6 +137,45 @@ public class WritingActivity extends AppCompatActivity {
         binding.textViewFeedbackComment.setText(apiResponse.getFeedbackComment());
         binding.textViewCorrectedText.setText(apiResponse.getCorrectedText());
         binding.textViewGrammaticalExplanation.setText(apiResponse.getGrammaticalExplanation());
+        Spannable highlightedText = highlightDifferences(apiResponse.getOriginalText(), apiResponse.getCorrectedText());
+        binding.textViewCorrectedText.setText(highlightedText);
+    }
+
+    private Spannable highlightDifferences(String original, String corrected) {
+        if (original == null || corrected == null) {
+            return new SpannableStringBuilder(corrected != null ? corrected : "");
+        }
+
+        // Create a builder for the final, styled text
+        SpannableStringBuilder builder = new SpannableStringBuilder(corrected);
+
+        // Create a set of original words for fast lookup.
+        // We clean them by making them lowercase and removing common punctuation.
+        Set<String> originalWordsSet = new HashSet<>();
+        Pattern wordPattern = Pattern.compile("\\w+"); // This pattern finds sequences of letters/numbers
+        Matcher originalMatcher = wordPattern.matcher(original.toLowerCase());
+        while (originalMatcher.find()) {
+            originalWordsSet.add(originalMatcher.group());
+        }
+
+        // Find all words in the corrected text
+        Matcher correctedMatcher = wordPattern.matcher(corrected);
+        while (correctedMatcher.find()) {
+            String correctedWord = correctedMatcher.group();
+            String cleanedCorrectedWord = correctedWord.toLowerCase();
+
+            // If the cleaned original words set doesn't contain the cleaned corrected word, it's new/changed.
+            if (!originalWordsSet.contains(cleanedCorrectedWord)) {
+                // Apply a red color span to this word in the builder
+                builder.setSpan(
+                        new ForegroundColorSpan(Color.RED),
+                        correctedMatcher.start(),
+                        correctedMatcher.end(),
+                        Spannable.SPAN_EXCLUSIVE_EXCLUSIVE
+                );
+            }
+        }
+        return builder;
     }
 
     private long saveScoreHistory(ApiResponse data) {
