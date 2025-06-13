@@ -36,7 +36,6 @@
                 android:textAppearance="@style/TextAppearance.Material3.DisplaySmall"
                 android:textColor="?attr/colorPrimary"
                 tools:text="85 / 100" />
-
             <TextView
                 android:id="@+id/textViewDetailTimestamp"
                 android:layout_width="match_parent"
@@ -45,6 +44,20 @@
                 android:textAppearance="@style/TextAppearance.Material3.LabelMedium"
                 android:textColor="?android:attr/textColorSecondary"
                 tools:text="07. Juni 2025, 14:30 Uhr" />
+
+            <GridLayout
+                android:id="@+id/detailedScoresGrid"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="16dp"
+                android:columnCount="2"
+                android:rowCount="2">
+
+                <TextView android:id="@+id/textViewDetailScoreGrammar" style="@style/ScoreDetailComponent" android:layout_columnWeight="1" tools:text="Grammatik: 30/35" />
+                <TextView android:id="@+id/textViewDetailScoreVocabulary" style="@style/ScoreDetailComponent" android:layout_columnWeight="1" tools:text="Wortschatz: 20/25" />
+                <TextView android:id="@+id/textViewDetailScoreCohesion" style="@style/ScoreDetailComponent" android:layout_columnWeight="1" tools:text="Aufbau: 15/20" />
+                <TextView android:id="@+id/textViewDetailScoreExpressiveness" style="@style/ScoreDetailComponent" android:layout_columnWeight="1" tools:text="Ausdruck: 20/20" />
+            </GridLayout>
 
             <com.google.android.material.divider.MaterialDivider
                 android:layout_width="match_parent"
@@ -57,7 +70,6 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="Korrigierter Text (Änderungen hervorgehoben):" />
-
             <TextView
                 android:id="@+id/textViewDetailCorrectedText"
                 android:layout_width="match_parent"
@@ -66,14 +78,12 @@
                 android:lineSpacingMultiplier="1.2"
                 android:textAppearance="@style/TextAppearance.Material3.BodyLarge"
                 tools:text="Der korrigierte Text." />
-
             <TextView
                 style="@style/TextAppearance.Material3.TitleMedium"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="16dp"
                 android:text="Ihr ursprünglicher Text:" />
-
             <TextView
                 android:id="@+id/textViewDetailOriginalText"
                 android:layout_width="match_parent"
@@ -83,14 +93,12 @@
                 android:padding="8dp"
                 android:lineSpacingMultiplier="1.2"
                 tools:text="Der original Text." />
-
             <TextView
                 style="@style/TextAppearance.Material3.TitleMedium"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="16dp"
                 android:text="Feedback Kommentar:" />
-
             <TextView
                 android:id="@+id/textViewDetailFeedbackComment"
                 android:layout_width="match_parent"
@@ -98,19 +106,18 @@
                 android:layout_marginTop="4dp"
                 android:lineSpacingMultiplier="1.2"
                 tools:text="Gute Arbeit. Achten Sie auf die Adjektivdeklination." />
-
             <TextView
                 style="@style/TextAppearance.Material3.TitleMedium"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="16dp"
                 android:text="Grammatikalische Erklärung:" />
-
             <TextView
                 android:id="@+id/textViewDetailGrammaticalExplanation"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="4dp"
+                android:layout_marginBottom="16dp"
                 android:lineSpacingMultiplier="1.2"
                 tools:text="Die Erklärung des Fehlers steht hier." />
 

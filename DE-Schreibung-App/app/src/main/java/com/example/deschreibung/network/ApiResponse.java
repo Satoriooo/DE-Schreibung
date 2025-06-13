@@ -1,6 +1,7 @@
 package com.example.deschreibung.network;
 
 import com.example.deschreibung.models.Vocabulary;
+import com.example.deschreibung.network.DetailedScore; // Import the new class
 import com.google.gson.annotations.SerializedName;
 import java.util.List;
 
@@ -19,6 +20,10 @@ public class ApiResponse {
     @SerializedName("score")
     private int score;
 
+    // NEW: Add field for the detailed score breakdown
+    @SerializedName("detailedScore")
+    private DetailedScore detailedScore;
+
     @SerializedName("grammaticalExplanation")
     private String grammaticalExplanation;
 
@@ -30,6 +35,7 @@ public class ApiResponse {
     public String getCorrectedText() { return correctedText; }
     public String getFeedbackComment() { return feedbackComment; }
     public int getScore() { return score; }
+    public DetailedScore getDetailedScore() { return detailedScore; } // NEW: Add getter
     public String getGrammaticalExplanation() { return grammaticalExplanation; }
     public List<Vocabulary> getVocabularyList() { return vocabularyList; }
 }

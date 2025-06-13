@@ -9,6 +9,13 @@ public class ScoreHistory {
     private String grammaticalExplanation;
     private String timestamp;
 
+    // NEW: Fields for the detailed score breakdown
+    private int scoreGrammar;
+    private int scoreVocabulary;
+    private int scoreCohesion;
+    private int scoreExpressiveness;
+
+
     // --- Constructors ---
     public ScoreHistory() {
     }
@@ -34,4 +41,17 @@ public class ScoreHistory {
 
     public String getTimestamp() { return timestamp; }
     public void setTimestamp(String timestamp) { this.timestamp = timestamp; }
+
+    // NEW: Getters and Setters for detailed scores
+    public int getScoreGrammar() { return scoreGrammar; }
+    public void setScoreGrammar(int scoreGrammar) { this.scoreGrammar = scoreGrammar; }
+
+    public int getScoreVocabulary() { return scoreVocabulary; }
+    public void setScoreVocabulary(int scoreVocabulary) { this.scoreVocabulary = scoreVocabulary; }
+
+    public int getScoreCohesion() { return scoreCohesion; }
+    public void setScoreCohesion(int scoreCohesion) { this.scoreCohesion = scoreCohesion; }
+
+    public int getScoreExpressiveness() { return scoreExpressiveness; }
+    public void setScoreExpressiveness(int scoreExpressiveness) { this.scoreExpressiveness = scoreExpressiveness; }
 }

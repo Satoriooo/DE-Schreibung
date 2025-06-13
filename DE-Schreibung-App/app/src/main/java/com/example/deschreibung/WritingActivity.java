@@ -19,11 +19,13 @@ import com.example.deschreibung.helper.DatabaseHelper;
 import com.example.deschreibung.models.Vocabulary;
 import com.example.deschreibung.network.ApiRequest;
 import com.example.deschreibung.network.ApiResponse;
+import com.example.deschreibung.network.DetailedScore; // NEW
 import com.example.deschreibung.network.RetrofitClient;
 
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Locale; // NEW
 import java.util.Random;
 import java.util.Set;
 import java.util.regex.Matcher;
@@ -34,7 +36,7 @@ import retrofit2.Callback;
 import retrofit2.Response;
 
 public class WritingActivity extends AppCompatActivity {
-
+    // ... (class properties are unchanged) ...
     private ActivityWritingBinding binding;
     private DatabaseHelper dbHelper;
     private final Random random = new Random();
@@ -67,6 +69,7 @@ public class WritingActivity extends AppCompatActivity {
         setupClickListeners();
     }
 
+    // ... (setupClickListeners, setNewRandomTopic, handleGetFeedbackClick, toggleLoadingState are unchanged) ...
     private void setupClickListeners() {
         binding.buttonNewTopic.setOnClickListener(v -> setNewRandomTopic());
         binding.buttonGetFeedback.setOnClickListener(v -> handleGetFeedbackClick());
@@ -120,12 +123,14 @@ public class WritingActivity extends AppCompatActivity {
         }
     }
 
+
+    // UPDATED: Now displays the detailed score breakdown
     private void saveAndDisplayFeedback(ApiResponse apiResponse) {
         long historyId = saveScoreHistory(apiResponse);
         if (historyId != -1) {
             if (apiResponse.getVocabularyList() != null && !apiResponse.getVocabularyList().isEmpty()) {
                 for (Vocabulary vocab : apiResponse.getVocabularyList()) {
-                    saveVocabulary(vocab);
+                    dbHelper.addVocabulary(vocab); // Use the helper method
                 }
             }
         } else {
@@ -133,7 +138,23 @@ public class WritingActivity extends AppCompatActivity {
         }
 
         binding.scrollViewFeedback.setVisibility(View.VISIBLE);
-        binding.textViewScore.setText(String.format(java.util.Locale.GERMAN, "Bewertung: %d/100", apiResponse.getScore()));
+        binding.textViewScore.setText(String.format(Locale.GERMAN, "Bewertung: %d/100", apiResponse.getScore()));
+
+        // NEW: Display the detailed score breakdown
+        DetailedScore detailedScore = apiResponse.getDetailedScore();
+        if (detailedScore != null) {
+            String detailedScoreText = String.format(Locale.GERMAN,
+                    "Grammatik: %d/35, Wortschatz: %d/25, Aufbau: %d/20, Ausdruck: %d/20",
+                    detailedScore.getGrammar(),
+                    detailedScore.getVocabulary(),
+                    detailedScore.getCohesion(),
+                    detailedScore.getExpressiveness());
+            binding.textViewDetailedScore.setText(detailedScoreText);
+            binding.textViewDetailedScore.setVisibility(View.VISIBLE);
+        } else {
+            binding.textViewDetailedScore.setVisibility(View.GONE);
+        }
+
         binding.textViewFeedbackComment.setText(apiResponse.getFeedbackComment());
         binding.textViewCorrectedText.setText(apiResponse.getCorrectedText());
         binding.textViewGrammaticalExplanation.setText(apiResponse.getGrammaticalExplanation());
@@ -141,32 +162,23 @@ public class WritingActivity extends AppCompatActivity {
         binding.textViewCorrectedText.setText(highlightedText);
     }
 
+    // ... (highlightDifferences is unchanged) ...
     private Spannable highlightDifferences(String original, String corrected) {
         if (original == null || corrected == null) {
             return new SpannableStringBuilder(corrected != null ? corrected : "");
         }
-
-        // Create a builder for the final, styled text
         SpannableStringBuilder builder = new SpannableStringBuilder(corrected);
-
-        // Create a set of original words for fast lookup.
-        // We clean them by making them lowercase and removing common punctuation.
         Set<String> originalWordsSet = new HashSet<>();
-        Pattern wordPattern = Pattern.compile("\\w+"); // This pattern finds sequences of letters/numbers
+        Pattern wordPattern = Pattern.compile("\\w+");
         Matcher originalMatcher = wordPattern.matcher(original.toLowerCase());
         while (originalMatcher.find()) {
             originalWordsSet.add(originalMatcher.group());
         }
-
-        // Find all words in the corrected text
         Matcher correctedMatcher = wordPattern.matcher(corrected);
         while (correctedMatcher.find()) {
             String correctedWord = correctedMatcher.group();
             String cleanedCorrectedWord = correctedWord.toLowerCase();
-
-            // If the cleaned original words set doesn't contain the cleaned corrected word, it's new/changed.
             if (!originalWordsSet.contains(cleanedCorrectedWord)) {
-                // Apply a red color span to this word in the builder
                 builder.setSpan(
                         new ForegroundColorSpan(Color.RED),
                         correctedMatcher.start(),
@@ -178,6 +190,8 @@ public class WritingActivity extends AppCompatActivity {
         return builder;
     }
 
+
+    // UPDATED: Now saves the detailed score breakdown to the database
     private long saveScoreHistory(ApiResponse data) {
         SQLiteDatabase db = dbHelper.getWritableDatabase();
         ContentValues values = new ContentValues();
@@ -186,18 +200,23 @@ public class WritingActivity extends AppCompatActivity {
         values.put(DatabaseHelper.KEY_FEEDBACK_COMMENT, data.getFeedbackComment());
         values.put(DatabaseHelper.KEY_SCORE, data.getScore());
         values.put(DatabaseHelper.KEY_GRAMMATICAL_EXPLANATION, data.getGrammaticalExplanation());
+
+        // NEW: Add detailed scores to the database record
+        DetailedScore detailedScore = data.getDetailedScore();
+        if (detailedScore != null) {
+            values.put(DatabaseHelper.KEY_SCORE_GRAMMAR, detailedScore.getGrammar());
+            values.put(DatabaseHelper.KEY_SCORE_VOCABULARY, detailedScore.getVocabulary());
+            values.put(DatabaseHelper.KEY_SCORE_COHESION, detailedScore.getCohesion());
+            values.put(DatabaseHelper.KEY_SCORE_EXPRESSIVENESS, detailedScore.getExpressiveness());
+        }
+
         long id = db.insert(DatabaseHelper.TABLE_SCORE_HISTORY, null, values);
         db.close();
         return id;
     }
 
+    // This method was incorrect; it should use the DatabaseHelper method.
     private void saveVocabulary(Vocabulary vocab) {
-        SQLiteDatabase db = dbHelper.getWritableDatabase();
-        ContentValues values = new ContentValues();
-        values.put(DatabaseHelper.KEY_GERMAN_WORD, vocab.getGermanWord());
-        values.put(DatabaseHelper.KEY_ENGLISH_TRANSLATION, vocab.getEnglishTranslation());
-        values.put(DatabaseHelper.KEY_EXAMPLE_SENTENCE, vocab.getExampleSentence());
-        db.insertWithOnConflict(DatabaseHelper.TABLE_VOCABULARY, null, values, SQLiteDatabase.CONFLICT_IGNORE);
-        db.close();
+        dbHelper.addVocabulary(vocab);
     }
 }

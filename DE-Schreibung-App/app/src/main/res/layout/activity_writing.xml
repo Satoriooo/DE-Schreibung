@@ -15,7 +15,6 @@
         android:textAppearance="@style/TextAppearance.Material3.LabelLarge"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent" />
-
     <EditText
         android:id="@+id/editTextTopic"
         android:layout_width="0dp"
@@ -28,8 +27,6 @@
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@id/textViewTopicLabel" />
-
-    <!-- Improved EditText with better constraints and properties -->
     <EditText
         android:id="@+id/editTextUserText"
         android:layout_width="0dp"
@@ -52,7 +49,6 @@
         app:layout_constraintTop_toBottomOf="@+id/editTextTopic"
         app:layout_constraintBottom_toTopOf="@+id/scrollViewFeedback" />
 
-    <!-- Feedback ScrollView - now positioned between EditText and buttons -->
     <ScrollView
         android:id="@+id/scrollViewFeedback"
         android:layout_width="0dp"
@@ -83,8 +79,19 @@
                 android:gravity="center"
                 android:textAppearance="@style/TextAppearance.Material3.HeadlineSmall"
                 android:textColor="?attr/colorPrimary"
-                android:paddingBottom="8dp"
+                android:paddingBottom="4dp"
                 tools:text="Bewertung: 85/100" />
+
+            <TextView
+                android:id="@+id/textViewDetailedScore"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:gravity="center"
+                android:textAppearance="@style/TextAppearance.Material3.LabelMedium"
+                android:textColor="?android:attr/textColorSecondary"
+                android:paddingBottom="8dp"
+                tools:text="Grammatik: 30/35, Wortschatz: 20/25, Aufbau: 15/20, Ausdruck: 20/20" />
+
 
             <com.google.android.material.divider.MaterialDivider
                 android:layout_width="match_parent"
@@ -97,7 +104,6 @@
                 android:layout_height="wrap_content"
                 android:text="Feedback Kommentar:"
                 android:textStyle="bold" />
-
             <TextView
                 android:id="@+id/textViewFeedbackComment"
                 android:layout_width="match_parent"
@@ -106,14 +112,12 @@
                 android:layout_marginBottom="12dp"
                 android:lineSpacingMultiplier="1.2"
                 tools:text="Your writing shows good structure and vocabulary usage. Consider varying your sentence length for better flow." />
-
             <TextView
                 style="@style/TextAppearance.Material3.TitleSmall"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="Korrigierter Text:"
                 android:textStyle="bold" />
-
             <TextView
                 android:id="@+id/textViewCorrectedText"
                 android:layout_width="match_parent"
@@ -123,14 +127,12 @@
                 android:lineSpacingMultiplier="1.2"
                 android:background="@android:color/transparent"
                 tools:text="Here is your corrected text with improvements..." />
-
             <TextView
                 style="@style/TextAppearance.Material3.TitleSmall"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="Grammatikalische Erklärung:"
                 android:textStyle="bold" />
-
             <TextView
                 android:id="@+id/textViewGrammaticalExplanation"
                 android:layout_width="match_parent"
@@ -141,7 +143,6 @@
         </LinearLayout>
     </ScrollView>
 
-    <!-- Container for buttons at bottom -->
     <LinearLayout
         android:id="@+id/buttonContainer"
         android:layout_width="0dp"
@@ -151,7 +152,6 @@
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent">
-
         <Button
             android:id="@+id/buttonNewTopic"
             style="@style/Widget.Material3.Button.OutlinedButton"
@@ -160,20 +160,17 @@
             android:layout_weight="1"
             android:layout_marginEnd="8dp"
             android:text="Neues Thema" />
-
         <FrameLayout
             android:id="@+id/frameLayoutGetFeedback"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="1"
             android:layout_marginStart="8dp">
-
             <Button
                 android:id="@+id/buttonGetFeedback"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:text="Feedback Holen" />
-
             <ProgressBar
                 android:id="@+id/progressBar"
                 style="?android:attr/progressBarStyle"
