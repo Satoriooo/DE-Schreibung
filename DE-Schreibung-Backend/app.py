@@ -5,7 +5,7 @@ import google.generativeai as genai
 from flask import Flask, request, jsonify
 from dotenv import load_dotenv
 
-print("--- SERVER STARTING WITH NORMALIZED VOCABULARY PROMPT V5 ---")
+print("--- SERVER STARTING WITH DETAILED SCORING RUBRIC V6 ---")
 
 # --- Setup ---
 load_dotenv()
@@ -20,7 +20,7 @@ try:
 except Exception as e:
     print(f"CRITICAL STARTUP ERROR: {e}")
 
-# --- UPDATED: Prompt for Text Evaluation ---
+# --- UPDATED: The new, detailed evaluation prompt ---
 EVALUATION_PROMPT_TEMPLATE = """
 You are 'Herr Schmidt', an extremely strict and meticulous German language teacher (ein strenger Prüfer) evaluating a student's writing for the B2 CEFR level. Your feedback must be precise, professional, and direct. Do not give high scores easily.
 
@@ -29,92 +29,69 @@ The user has provided the following text:
 {user_text}
 \"\"\"
 
-You MUST provide your response as a single, valid JSON object. Do not include any text or markdown formatting before or after the JSON object. The JSON object must have the following structure:
+You MUST provide your response as a single, valid JSON object. Do not include any text or markdown formatting before or after the JSON object. The JSON object must have the following structure. **You MUST include the `detailedScore` object with all four sub-scores.**
 {{
   "originalText": "The user's original, unmodified text.",
   "correctedText": "The fully corrected version of the user's text. Ensure it is grammatically perfect and stylistically appropriate for a B2 level.",
-  "feedbackComment": "A direct, professional comment on the overall quality. Justify the score based on the rubric below. Mention its primary strengths and weaknesses.",
-  "score": <An integer score from 0 to 100 based on the STRICT rubric below>,
+  "feedbackComment": "A direct, professional comment on the overall quality. Justify the final score by referencing the four criteria from the rubric below (Grammar, Vocabulary, Cohesion, Expressiveness).",
+  "score": <The integer SUM of the four scores from the `detailedScore` object>,
+  "detailedScore": {{
+      "grammar": <Score for Grammar, 35 max>,
+      "vocabulary": <Score for Vocabulary, 25 max>,
+      "cohesion": <Score for Cohesion, 20 max>,
+      "expressiveness": <Score for Expressiveness, 20 max>
+  }},
   "grammaticalExplanation": "A detailed but clear explanation of the 2-3 most important grammatical or stylistic mistakes in the text. Explain WHY it was wrong and what the correct form is.",
   "vocabularyList": [ {{ "germanWord": "<...>", "englishTranslation": "<...>", "exampleSentence": "<...>" }} ]
 }}
 
 **SCORING RUBRIC (BE VERY STRICT):**
-- **95-100 (Exzellent):** Near-native fluency. Uses complex sentence structures (e.g., Konjunktiv II, Passiv, complex relative clauses) perfectly. No grammatical errors. Vocabulary is sophisticated and precise. This score should be exceptionally rare.
-- **85-94 (Gut):** Solid B2 level. Clear, well-structured text with a good range of vocabulary. Only minor, isolated errors in grammar (e.g., an incorrect adjective ending) that do not hinder comprehension at all.
-- **70-84 (Befriedigend):** Borderline B2. The meaning is clear, but there are noticeable errors in grammar (e.g., several wrong case endings, incorrect prepositions, verb position errors) or unnatural phrasing. The student is understandable but clearly not consistently at a B2 level. **Most of the user's texts will likely fall in this range.**
-- **50-69 (Ausreichend):** Below B2 level. Contains frequent grammatical errors that sometimes make the text difficult to understand. Vocabulary is limited and repetitive. Sentence structure is simple and often incorrect.
-- **0-49 (Nicht ausreichend):** Many fundamental errors in basic grammar. The text is largely incomprehensible.
+
+To determine the final `score` out of 100, you must first mentally evaluate the text based on the four weighted criteria below. The final score is the sum of the points from each category. Your `feedbackComment` must summarize the performance in each of these areas to justify the total score.
+
+**1. Grammatische Korrektheit (Grammatical Accuracy - Weight: 35)**
+   - **Exzellent (30-35 pts):** No significant errors. Correct and confident use of complex structures (Konjunktiv II, Passiv, Genitiv, complex relative clauses).
+   - **Gut (25-29 pts):** Minor, isolated errors (e.g., an occasional adjective ending, preposition) that do not hinder comprehension.
+   - **Befriedigend (20-24 pts):** Several noticeable errors in core B2 grammar (e.g., case endings, verb position, tense usage), but the meaning is generally clear.
+   - **Ausreichend (10-19 pts):** Frequent errors that make the text difficult to follow. Serious issues with fundamental sentence structure.
+   - **Nicht ausreichend (0-9 pts):** Basic grammar is flawed; the text is mostly incomprehensible.
+
+**2. Wortschatz (Vocabulary Range & Precision - Weight: 25)**
+   - **Exzellent (22-25 pts):** Wide range of vocabulary, precise and appropriate word choice, effective use of idiomatic expressions.
+   - **Gut (18-21 pts):** Good B2 vocabulary range, generally appropriate usage, but perhaps less precise or varied.
+   - **Befriedigend (14-17 pts):** Adequate but limited vocabulary. Repetition of simple words, some incorrect word choices (e.g., false friends).
+   - **Ausreichend (8-13 pts):** Very basic vocabulary that is insufficient for the B2 level. Frequent errors in word choice interfere with meaning.
+   - **Nicht ausreichend (0-7 pts):** Vocabulary is so limited or incorrectly used that communication fails.
+
+**3. Textaufbau & Kohärenz (Structure & Cohesion - Weight: 20)**
+   - **Exzellent (18-20 pts):** Text is logically structured, well-paragraphed, and flows smoothly using a variety of appropriate connectors.
+   - **Gut (15-17 pts):** Clear structure and logical flow, but may rely on simpler or slightly repetitive connectors.
+   - **Befriedigend (11-14 pts):** Structure is evident but may be inconsistent. The connection of ideas is sometimes abrupt or unclear.
+   - **Ausreichend (6-10 pts):** Weak structure; ideas are not logically linked. A clear lack of appropriate connectors.
+   - **Nicht ausreichend (0-5 pts):** No discernible structure or logical flow.
+
+**4. Ausdrucksfähigkeit & Stil (Expressiveness & Style - Weight: 20)**
+   - **Exzellent (18-20 pts):** Style is confident, natural, and appropriate for B2. Able to express complex ideas and nuances clearly. Sentence structure is varied and sophisticated.
+   - **Gut (15-17 pts):** Can express ideas clearly, but with less complexity or stylistic flair. Sentence structures are correct but may be less varied.
+   - **Befriedigend (11-14 pts):** Expression can be clumsy or unnatural ("Denglisch"). Relies heavily on simple sentence structures.
+   - **Ausreichend (6-10 pts):** Struggles to form coherent sentences to express ideas. The style is very simple and highly repetitive.
+   - **Nicht ausreichend (0-5 pts):** Unable to express even simple ideas clearly.
 
 **IMPORTANT RULES for the `vocabularyList`:**
-- **All words in the `germanWord` field MUST be in their dictionary/base form.** For verbs, this is the infinitive (e.g., 'gehen', not 'gegangen'). For nouns, this is the singular nominative case and MUST include the article (e.g., 'der Apfel', not 'Äpfel'). For adjectives, use the uninflected base form (e.g., 'gut', not 'guter').
-- Only extract nouns, verbs, adjectives, or adverbs that are at a B2 level or higher.
-- EXCLUDE simple, common words (e.g., personal pronouns like 'ich', 'du'; articles like 'der', 'die', 'das'; common prepositions like 'in', 'auf'; and A1/A2 verbs like 'sein', 'haben', 'gehen').
-- If the user made no relevant vocabulary mistakes, return an empty array: [].
-- Provide a maximum of 3 words for the list.
+- All words in the `germanWord` field MUST be in their dictionary/base form. For verbs, this is the infinitive (e.g., 'gehen', not 'gegangen'). For nouns, this is the singular nominative case and MUST include the article (e.g., 'der Apfel', not 'Äpfel'). For adjectives, use the uninflected base form (e.g., 'gut', not 'guter').
+- Only extract B2-level vocabulary.
+- EXCLUDE simple, common words.
+- If no mistakes, return an empty array: [].
+- Provide a maximum of 3 words.
 """
 
-# --- UPDATED: Prompt for More Examples with Translations ---
-EXAMPLES_PROMPT_TEMPLATE = """
-You are a German language teacher. A student wants more example sentences for a specific German word to understand its usage better.
-The student has requested examples for the word: "{german_word}"
-
-Provide three diverse and useful example sentences for this word, appropriate for a B2 CEFR level.
-The sentences must be returned as a single, valid JSON object. For each German example, you MUST provide an accurate English translation. Do not include any text or markdown formatting before or after the JSON object.
-The JSON object must have a single key, "examples", which contains a list of objects. Each object must have two keys: "german" and "english".
-
-Example format:
-{{
-  "examples": [
-    {{ "german": "Das ist der erste Beispielsatz.", "english": "This is the first sentence." }},
-    {{ "german": "Hier ist ein zweiter, anderer Satz.", "english": "Here is a second, different sentence." }},
-    {{ "german": "Und ein dritter Satz, der eine andere Nuance zeigt.", "english": "And a third sentence that shows another nuance." }}
-  ]
-}}
-"""
-
+# The rest of the file (/more_examples endpoint, etc.) is unchanged.
+# For brevity, it is omitted here, but you should replace the entire file content.
 @app.route('/evaluate', methods=['POST'])
 def evaluate_text_endpoint():
-    # This function's logic remains the same
-    try:
-        request_data = request.get_json()
-        user_text = request_data.get('text')
-        print(f"Received text for evaluation: {user_text[:80]}...")
-        full_prompt = EVALUATION_PROMPT_TEMPLATE.format(user_text=user_text)
-        model = genai.GenerativeModel('gemini-1.5-flash')
-        response = model.generate_content(full_prompt)
-        print("--- Full Gemini Response Object (Evaluate) ---")
-        print(response)
-        if not response.parts:
-            return jsonify({"error": "Response blocked by safety filters."}), 500
-        cleaned_response_text = response.text.strip().replace('```json', '').replace('```', '').strip()
-        response_json = json.loads(cleaned_response_text)
-        response_json['originalText'] = user_text
-        return jsonify(response_json), 200
-    except Exception as e:
-        print(traceback.format_exc())
-        return jsonify({"error": "Internal server error."}), 500
-
+    # ... no changes
 @app.route('/more_examples', methods=['POST'])
 def more_examples_endpoint():
-    # This function's logic also remains the same
-    try:
-        request_data = request.get_json()
-        german_word = request_data.get('word')
-        print(f"Received request for examples for word: {german_word}")
-        prompt = EXAMPLES_PROMPT_TEMPLATE.format(german_word=german_word)
-        model = genai.GenerativeModel('gemini-1.5-flash')
-        response = model.generate_content(prompt)
-        print("--- Full Gemini Response Object (More Examples) ---")
-        print(response)
-        if not response.parts:
-            return jsonify({"error": "Response blocked by safety filters."}), 500
-        cleaned_response_text = response.text.strip().replace('```json', '').replace('```', '').strip()
-        response_json = json.loads(cleaned_response_text)
-        return jsonify(response_json), 200
-    except Exception as e:
-        print(traceback.format_exc())
-        return jsonify({"error": "Internal server error."}), 500
-
+    # ... no changes
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000, debug=True)
