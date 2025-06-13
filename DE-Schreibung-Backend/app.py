@@ -5,7 +5,7 @@ import google.generativeai as genai
 from flask import Flask, request, jsonify
 from dotenv import load_dotenv
 
-print("--- SERVER STARTING WITH ENHANCED PROMPTS V4 ---")
+print("--- SERVER STARTING WITH NORMALIZED VOCABULARY PROMPT V5 ---")
 
 # --- Setup ---
 load_dotenv()
@@ -20,7 +20,7 @@ try:
 except Exception as e:
     print(f"CRITICAL STARTUP ERROR: {e}")
 
-# --- UPDATED: Prompt for Text Evaluation with a Strict Rubric ---
+# --- UPDATED: Prompt for Text Evaluation ---
 EVALUATION_PROMPT_TEMPLATE = """
 You are 'Herr Schmidt', an extremely strict and meticulous German language teacher (ein strenger Prüfer) evaluating a student's writing for the B2 CEFR level. Your feedback must be precise, professional, and direct. Do not give high scores easily.
 
@@ -45,6 +45,13 @@ You MUST provide your response as a single, valid JSON object. Do not include an
 - **70-84 (Befriedigend):** Borderline B2. The meaning is clear, but there are noticeable errors in grammar (e.g., several wrong case endings, incorrect prepositions, verb position errors) or unnatural phrasing. The student is understandable but clearly not consistently at a B2 level. **Most of the user's texts will likely fall in this range.**
 - **50-69 (Ausreichend):** Below B2 level. Contains frequent grammatical errors that sometimes make the text difficult to understand. Vocabulary is limited and repetitive. Sentence structure is simple and often incorrect.
 - **0-49 (Nicht ausreichend):** Many fundamental errors in basic grammar. The text is largely incomprehensible.
+
+**IMPORTANT RULES for the `vocabularyList`:**
+- **All words in the `germanWord` field MUST be in their dictionary/base form.** For verbs, this is the infinitive (e.g., 'gehen', not 'gegangen'). For nouns, this is the singular nominative case and MUST include the article (e.g., 'der Apfel', not 'Äpfel'). For adjectives, use the uninflected base form (e.g., 'gut', not 'guter').
+- Only extract nouns, verbs, adjectives, or adverbs that are at a B2 level or higher.
+- EXCLUDE simple, common words (e.g., personal pronouns like 'ich', 'du'; articles like 'der', 'die', 'das'; common prepositions like 'in', 'auf'; and A1/A2 verbs like 'sein', 'haben', 'gehen').
+- If the user made no relevant vocabulary mistakes, return an empty array: [].
+- Provide a maximum of 3 words for the list.
 """
 
 # --- UPDATED: Prompt for More Examples with Translations ---
