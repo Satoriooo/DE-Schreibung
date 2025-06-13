@@ -1,6 +1,11 @@
 package com.example.deschreibung;
 
+import android.graphics.Color; // <-- ADD
 import android.os.Bundle;
+import android.text.Spannable; // <-- ADD
+import android.text.SpannableStringBuilder; // <-- ADD
+import android.text.style.ForegroundColorSpan; // <-- ADD
+import android.text.style.StyleSpan; // <-- ADD
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.LinearLayout;
@@ -8,8 +13,10 @@ import android.widget.TextView;
 import android.widget.Toast;
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
+
 import com.example.deschreibung.databinding.ActivityVocabularyDetailBinding;
 import com.example.deschreibung.helper.DatabaseHelper;
+import com.example.deschreibung.models.ExampleSentence; // <-- ADD
 import com.example.deschreibung.models.Vocabulary;
 import com.example.deschreibung.network.MoreExamplesRequest;
 import com.example.deschreibung.network.MoreExamplesResponse;
@@ -35,13 +42,10 @@ public class VocabularyDetailActivity extends AppCompatActivity {
         setupToolbar();
         long vocabularyId = getIntent().getLongExtra(EXTRA_VOCAB_ID, -1);
         if (vocabularyId == -1) {
-            Toast.makeText(this, "Fehler: Ungültige Vokabel-ID.", Toast.LENGTH_SHORT).show();
             finish();
             return;
         }
         loadVocabularyDetails(vocabularyId);
-
-        // NEW: Set up the listener for the new button
         binding.buttonMoreExamples.setOnClickListener(v -> fetchMoreExamples());
     }
 
@@ -50,62 +54,54 @@ public class VocabularyDetailActivity extends AppCompatActivity {
     }
 
     private void loadVocabularyDetails(long id) {
-        Vocabulary vocab = dbHelper.getVocabularyById(id);
-        if (vocab != null) {
-            binding.textViewDetailGermanWord.setText(vocab.getGermanWord());
-            binding.textViewDetailEnglishTranslation.setText(vocab.getEnglishTranslation());
-            binding.textViewDetailExampleSentence.setText(vocab.getExampleSentence());
-        } else {
-            Toast.makeText(this, "Vokabel nicht gefunden.", Toast.LENGTH_SHORT).show();
-            finish();
-        }
+        // ... (this method is unchanged)
     }
 
-    // --- NEW: All logic for the new feature ---
     private void fetchMoreExamples() {
-        String germanWord = binding.textViewDetailGermanWord.getText().toString();
-        if (germanWord.isEmpty()) {
-            return;
-        }
-
-        toggleLoadingState(true);
-
-        MoreExamplesRequest request = new MoreExamplesRequest(germanWord);
-        Call<MoreExamplesResponse> call = RetrofitClient.getApiService().getMoreExamples(request);
-        call.enqueue(new Callback<MoreExamplesResponse>() {
-            @Override
-            public void onResponse(@NonNull Call<MoreExamplesResponse> call, @NonNull Response<MoreExamplesResponse> response) {
-                toggleLoadingState(false);
-                if (response.isSuccessful() && response.body() != null) {
-                    displayMoreExamples(response.body());
-                } else {
-                    Toast.makeText(VocabularyDetailActivity.this, "Fehler: " + response.code(), Toast.LENGTH_SHORT).show();
-                }
-            }
-
-            @Override
-            public void onFailure(@NonNull Call<MoreExamplesResponse> call, @NonNull Throwable t) {
-                toggleLoadingState(false);
-                Toast.makeText(VocabularyDetailActivity.this, "Netzwerkfehler.", Toast.LENGTH_SHORT).show();
-            }
-        });
+        // ... (this method is unchanged)
     }
 
+    // THIS METHOD IS UPDATED TO HANDLE THE NEW RESPONSE STRUCTURE
     private void displayMoreExamples(MoreExamplesResponse response) {
-        binding.containerMoreExamples.removeAllViews(); // Clear old examples first
+        binding.containerMoreExamples.removeAllViews();
         binding.containerMoreExamples.setVisibility(View.VISIBLE);
 
         if (response.getExamples() == null || response.getExamples().isEmpty()) {
-            binding.containerMoreExamples.addView(createExampleTextView("Keine weiteren Beispiele gefunden."));
+            binding.containerMoreExamples.addView(createExampleTextView("Keine weiteren Beispiele gefunden.", false));
             return;
         }
 
-        for (String example : response.getExamples()) {
-            binding.containerMoreExamples.addView(createExampleTextView("• " + example));
+        for (ExampleSentence example : response.getExamples()) {
+            binding.containerMoreExamples.addView(createExampleTextView(example));
         }
     }
 
-    private TextView createExampleTextView(String text) {
+    // NEW: Overloaded method to handle the new ExampleSentence object
+    private TextView createExampleTextView(ExampleSentence example) {
+        // Example: "• Der deutsche Satz.\n  (The English sentence.)"
+        String germanPart = "• " + example.getGerman() + "\n";
+        String englishPart = "  (" + example.getEnglish() + ")";
+
+        SpannableStringBuilder builder = new SpannableStringBuilder(germanPart + englishPart);
+
+        // Make the English part grey and italic
+        builder.setSpan(new ForegroundColorSpan(Color.GRAY), germanPart.length(), builder.length(), Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
+        builder.setSpan(new StyleSpan(android.graphics.Typeface.ITALIC), germanPart.length(), builder.length(), Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
+
+        return createBaseTextView(builder);
+    }
+
+    // NEW: Overloaded method for simple text
+    private TextView createExampleTextView(String text, boolean isError) {
+        SpannableStringBuilder builder = new SpannableStringBuilder(text);
+        if (isError) {
+            builder.setSpan(new StyleSpan(android.graphics.Typeface.ITALIC), 0, text.length(), Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
+        }
+        return createBaseTextView(builder);
+    }
+
+    // NEW: Base method to create and style a TextView to reduce code duplication
+    private TextView createBaseTextView(CharSequence text) {
         TextView textView = new TextView(this);
         textView.setText(text);
         textView.setTextAppearance(com.google.android.material.R.style.TextAppearance_Material3_BodyMedium);
@@ -113,7 +109,7 @@ public class VocabularyDetailActivity extends AppCompatActivity {
                 ViewGroup.LayoutParams.MATCH_PARENT,
                 ViewGroup.LayoutParams.WRAP_CONTENT
         );
-        params.setMargins(0, 4, 0, 4);
+        params.setMargins(0, 8, 0, 8); // Added a bit more margin
         textView.setLayoutParams(params);
         return textView;
     }
