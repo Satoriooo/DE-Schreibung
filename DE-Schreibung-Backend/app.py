@@ -20,7 +20,18 @@ try:
 except Exception as e:
     print(f"CRITICAL STARTUP ERROR: {e}")
 
-# --- UPDATED: The new, detailed evaluation prompt ---
+
+# <<< --- FIX: ADD THIS HEALTH CHECK ROUTE --- >>>
+@app.route('/')
+def health_check():
+    """
+    A simple health check endpoint that Render can use to verify the service is running.
+    """
+    return jsonify({"status": "ok", "message": "Server is healthy."}), 200
+# <<< --- END OF FIX --- >>>
+
+
+# --- PROMPT TEMPLATES ---
 EVALUATION_PROMPT_TEMPLATE = """
 You are 'Herr Schmidt', an extremely strict and meticulous German language teacher (ein strenger Prüfer) evaluating a student's writing for the B2 CEFR level. Your feedback must be precise, professional, and direct. Do not give high scores easily.
 
@@ -85,7 +96,6 @@ To determine the final `score` out of 100, you must first mentally evaluate the 
 - Provide a maximum of 3 words.
 """
 
-# <<< --- FIX: ADD THIS MISSING PROMPT TEMPLATE --- >>>
 EXAMPLES_PROMPT_TEMPLATE = """
 You are a helpful language assistant. A user wants to see more example sentences for a German word.
 The word is: "{german_word}"
@@ -99,11 +109,9 @@ You MUST provide your response as a single, valid JSON object with the following
   ]
 }}
 """
-# <<< --- END OF FIX --- >>>
 
 @app.route('/evaluate', methods=['POST'])
 def evaluate_text_endpoint():
-    # This function's logic remains the same
     try:
         request_data = request.get_json()
         user_text = request_data.get('text')
@@ -125,12 +133,11 @@ def evaluate_text_endpoint():
 
 @app.route('/more_examples', methods=['POST'])
 def more_examples_endpoint():
-    # This function's logic also remains the same
     try:
         request_data = request.get_json()
         german_word = request_data.get('word')
         print(f"Received request for examples for word: {german_word}")
-        prompt = EXAMPLES_PROMPT_TEMPLATE.format(german_word=german_word) # This will now work
+        prompt = EXAMPLES_PROMPT_TEMPLATE.format(german_word=german_word)
         model = genai.GenerativeModel('gemini-1.5-flash')
         response = model.generate_content(prompt)
         print("--- Full Gemini Response Object (More Examples) ---")
@@ -142,7 +149,6 @@ def more_examples_endpoint():
         return jsonify(response_json), 200
     except Exception as e:
         print(traceback.format_exc())
-        # <<< --- FIX: Corrected this line --- >>>
         return jsonify({"error": "Internal server error."}), 500
 
 if __name__ == '__main__':
