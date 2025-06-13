@@ -85,13 +85,47 @@ To determine the final `score` out of 100, you must first mentally evaluate the 
 - Provide a maximum of 3 words.
 """
 
-# The rest of the file (/more_examples endpoint, etc.) is unchanged.
-# For brevity, it is omitted here, but you should replace the entire file content.
 @app.route('/evaluate', methods=['POST'])
 def evaluate_text_endpoint():
-    # ... no changes
+    # This function's logic remains the same
+    try:
+        request_data = request.get_json()
+        user_text = request_data.get('text')
+        print(f"Received text for evaluation: {user_text[:80]}...")
+        full_prompt = EVALUATION_PROMPT_TEMPLATE.format(user_text=user_text)
+        model = genai.GenerativeModel('gemini-1.5-flash')
+        response = model.generate_content(full_prompt)
+        print("--- Full Gemini Response Object (Evaluate) ---")
+        print(response)
+        if not response.parts:
+            return jsonify({"error": "Response blocked by safety filters."}), 500
+        cleaned_response_text = response.text.strip().replace('```json', '').replace('```', '').strip()
+        response_json = json.loads(cleaned_response_text)
+        response_json['originalText'] = user_text
+        return jsonify(response_json), 200
+    except Exception as e:
+        print(traceback.format_exc())
+        return jsonify({"error": "Internal server error."}), 500
+
 @app.route('/more_examples', methods=['POST'])
 def more_examples_endpoint():
-    # ... no changes
+    # This function's logic also remains the same
+    try:
+        request_data = request.get_json()
+        german_word = request_data.get('word')
+        print(f"Received request for examples for word: {german_word}")
+        prompt = EXAMPLES_PROMPT_TEMPLATE.format(german_word=german_word)
+        model = genai.GenerativeModel('gemini-1.5-flash')
+        response = model.generate_content(prompt)
+        print("--- Full Gemini Response Object (More Examples) ---")
+        print(response)
+        if not response.parts:
+            return jsonify({"error": "Response blocked by safety filters."}), 500
+        cleaned_response_text = response.text.strip().replace('```json', '').replace('```', '').strip()
+        response_json = json.loads(cleaned_response_text)
+        return jsonify(response_json), 200
+    except Exception as e:
+        print(traceback.format_exc())
+        return jsonify({"error": "Internal server error."}), 500
+
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=5000, debug=True)
