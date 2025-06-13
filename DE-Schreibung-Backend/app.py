@@ -5,7 +5,7 @@ import google.generativeai as genai
 from flask import Flask, request, jsonify
 from dotenv import load_dotenv
 
-print("--- SERVER STARTING WITH FINAL PROMPTS ---")
+print("--- SERVER STARTING WITH ENHANCED PROMPTS V4 ---")
 
 # --- Setup ---
 load_dotenv()
@@ -20,107 +20,92 @@ try:
 except Exception as e:
     print(f"CRITICAL STARTUP ERROR: {e}")
 
-# --- THIS IS THE FULL, UNABBREVIATED EVALUATION PROMPT ---
+# --- UPDATED: Prompt for Text Evaluation with a Strict Rubric ---
 EVALUATION_PROMPT_TEMPLATE = """
-You are a strict but fair German language teacher named 'Herr Schmidt'. Your student is studying for the B2 CEFR level. Your task is to evaluate the student's written text, providing feedback with the goal of helping them pass the B2 exam. Do not be overly friendly or encouraging; be direct, precise, and professional.
+You are 'Herr Schmidt', an extremely strict and meticulous German language teacher (ein strenger Prüfer) evaluating a student's writing for the B2 CEFR level. Your feedback must be precise, professional, and direct. Do not give high scores easily.
 
 The user has provided the following text:
 \"\"\"
 {user_text}
 \"\"\"
 
-You MUST provide your response as a single, valid JSON object. Do not include any text or markdown formatting before or after the JSON object. The JSON object must have the following structure and content:
-
+You MUST provide your response as a single, valid JSON object. Do not include any text or markdown formatting before or after the JSON object. The JSON object must have the following structure:
 {{
   "originalText": "The user's original, unmodified text.",
   "correctedText": "The fully corrected version of the user's text. Ensure it is grammatically perfect and stylistically appropriate for a B2 level.",
-  "feedbackComment": "A direct, professional comment on the overall quality of the text. Mention its strengths and weaknesses in relation to the B2 level. Keep it concise.",
-  "score": <An integer score from 0 to 100. Be a strict grader. A good B2 text would be 85-95. A perfect text is 100. A text with several basic errors should be below 70.>,
+  "feedbackComment": "A direct, professional comment on the overall quality. Justify the score based on the rubric below. Mention its primary strengths and weaknesses.",
+  "score": <An integer score from 0 to 100 based on the STRICT rubric below>,
   "grammaticalExplanation": "A detailed but clear explanation of the 2-3 most important grammatical or stylistic mistakes in the text. Explain WHY it was wrong and what the correct form is.",
-  "vocabularyList": [
-    {{
-      "germanWord": "<The first key B2-level noun, verb, adjective, or adverb the user used incorrectly or could have used.>",
-      "englishTranslation": "<The English translation of the German word.>",
-      "exampleSentence": "<A simple, correct German sentence using this word.>"
-    }}
-  ]
+  "vocabularyList": [ {{ "germanWord": "<...>", "englishTranslation": "<...>", "exampleSentence": "<...>" }} ]
 }}
 
-IMPORTANT RULES for the `vocabularyList`:
-- Only extract nouns, verbs, adjectives, or adverbs that are at a B2 level or higher.
-- EXCLUDE simple, common words (e.g., personal pronouns like 'ich', 'du'; articles like 'der', 'die', 'das'; common prepositions like 'in', 'auf'; and A1/A2 verbs like 'sein', 'haben', 'gehen').
-- If the user made no relevant vocabulary mistakes, return an empty array: [].
-- Provide a maximum of 3 words for the list.
+**SCORING RUBRIC (BE VERY STRICT):**
+- **95-100 (Exzellent):** Near-native fluency. Uses complex sentence structures (e.g., Konjunktiv II, Passiv, complex relative clauses) perfectly. No grammatical errors. Vocabulary is sophisticated and precise. This score should be exceptionally rare.
+- **85-94 (Gut):** Solid B2 level. Clear, well-structured text with a good range of vocabulary. Only minor, isolated errors in grammar (e.g., an incorrect adjective ending) that do not hinder comprehension at all.
+- **70-84 (Befriedigend):** Borderline B2. The meaning is clear, but there are noticeable errors in grammar (e.g., several wrong case endings, incorrect prepositions, verb position errors) or unnatural phrasing. The student is understandable but clearly not consistently at a B2 level. **Most of the user's texts will likely fall in this range.**
+- **50-69 (Ausreichend):** Below B2 level. Contains frequent grammatical errors that sometimes make the text difficult to understand. Vocabulary is limited and repetitive. Sentence structure is simple and often incorrect.
+- **0-49 (Nicht ausreichend):** Many fundamental errors in basic grammar. The text is largely incomprehensible.
 """
 
-# --- THIS IS THE FULL, UNABBREVIATED EXAMPLES PROMPT ---
+# --- UPDATED: Prompt for More Examples with Translations ---
 EXAMPLES_PROMPT_TEMPLATE = """
 You are a German language teacher. A student wants more example sentences for a specific German word to understand its usage better.
 The student has requested examples for the word: "{german_word}"
 
-Provide three diverse and useful example sentences for this word. The sentences should be appropriate for a B2 CEFR level.
-The sentences must be returned as a single, valid JSON object. Do not include any text or markdown formatting before or after the JSON object.
-The JSON object must have a single key, "examples", which contains a list of the three strings.
+Provide three diverse and useful example sentences for this word, appropriate for a B2 CEFR level.
+The sentences must be returned as a single, valid JSON object. For each German example, you MUST provide an accurate English translation. Do not include any text or markdown formatting before or after the JSON object.
+The JSON object must have a single key, "examples", which contains a list of objects. Each object must have two keys: "german" and "english".
 
 Example format:
 {{
   "examples": [
-    "Das ist der erste Beispielsatz.",
-    "Hier ist ein zweiter, anderer Satz.",
-    "Und ein dritter Satz, der eine andere Nuance zeigt."
+    {{ "german": "Das ist der erste Beispielsatz.", "english": "This is the first sentence." }},
+    {{ "german": "Hier ist ein zweiter, anderer Satz.", "english": "Here is a second, different sentence." }},
+    {{ "german": "Und ein dritter Satz, der eine andere Nuance zeigt.", "english": "And a third sentence that shows another nuance." }}
   ]
 }}
 """
 
 @app.route('/evaluate', methods=['POST'])
 def evaluate_text_endpoint():
+    # This function's logic remains the same
     try:
         request_data = request.get_json()
         user_text = request_data.get('text')
         print(f"Received text for evaluation: {user_text[:80]}...")
-        
         full_prompt = EVALUATION_PROMPT_TEMPLATE.format(user_text=user_text)
         model = genai.GenerativeModel('gemini-1.5-flash')
         response = model.generate_content(full_prompt)
-
+        print("--- Full Gemini Response Object (Evaluate) ---")
+        print(response)
         if not response.parts:
-            print("--- Gemini Response Blocked ---")
-            print(response.prompt_feedback)
-            return jsonify({"error": "The response was blocked by Google's safety filters."}), 500
-
+            return jsonify({"error": "Response blocked by safety filters."}), 500
         cleaned_response_text = response.text.strip().replace('```json', '').replace('```', '').strip()
         response_json = json.loads(cleaned_response_text)
         response_json['originalText'] = user_text
         return jsonify(response_json), 200
-
     except Exception as e:
-        print("--- An exception occurred during the /evaluate request ---")
         print(traceback.format_exc())
         return jsonify({"error": "Internal server error."}), 500
 
-
 @app.route('/more_examples', methods=['POST'])
 def more_examples_endpoint():
+    # This function's logic also remains the same
     try:
         request_data = request.get_json()
         german_word = request_data.get('word')
         print(f"Received request for examples for word: {german_word}")
-
         prompt = EXAMPLES_PROMPT_TEMPLATE.format(german_word=german_word)
         model = genai.GenerativeModel('gemini-1.5-flash')
         response = model.generate_content(prompt)
-        
+        print("--- Full Gemini Response Object (More Examples) ---")
+        print(response)
         if not response.parts:
-            print("--- Gemini Response Blocked ---")
-            print(response.prompt_feedback)
-            return jsonify({"error": "The response was blocked by safety filters."}), 500
-
+            return jsonify({"error": "Response blocked by safety filters."}), 500
         cleaned_response_text = response.text.strip().replace('```json', '').replace('```', '').strip()
         response_json = json.loads(cleaned_response_text)
         return jsonify(response_json), 200
-        
     except Exception as e:
-        print("--- An exception occurred during the /more_examples request ---")
         print(traceback.format_exc())
         return jsonify({"error": "Internal server error."}), 500
 
